@@ -122,9 +122,13 @@ def gpg_encrypt(filename, passphrase, content):
         p.handles['stdin'].write(content)
         p.handles['stdin'].close()
 
+    try:
         p.wait()
-
-    os.rename(filename + '.tmp', filename)
+    except IOError, exc:
+        print >>sys.stderr, exc
+        os.remove(filename + '.tmp')
+    else:
+        os.rename(filename + '.tmp', filename)
 
 
 def gpg_decrypt(filename, passphrase):
@@ -152,9 +156,12 @@ def gpg_decrypt(filename, passphrase):
         content = p.handles['stdout'].read()
         p.handles['stdout'].close()
 
+    try:
         p.wait()
-
-    return content
+    except IOError:
+        return ''
+    else:
+        return content
 
 def main():
     parser = optparse.OptionParser(
@@ -190,7 +197,10 @@ def main():
     if action == 'get':
         for filename in files:
             secret = gpg_decrypt(filename, passphrase)
-            print '%s: %s' % (filename, secret)
+            if secret:
+                print '%s: %s' % (filename, secret)
+            else:
+                print 'Error: Failed to decrypt %s' % filename
             print ''
 
     elif action == 'set':
