@@ -106,6 +106,7 @@ def gpg_encrypt(filename, passphrase, content):
         gnupg = GnuPGInterface.GnuPG()
         gnupg.options.armor = 1
         gnupg.options.meta_interactive = 0
+        gnupg.options.extra_args = ['--cipher-algo', 'AES256']
 
         p = gnupg.run(
             ['--symmetric'],
