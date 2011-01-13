@@ -196,17 +196,18 @@ def main():
     elif action == 'set':
         for filename in files:
             pwlist = generate_passphrases()
-            for i, pw in enumerate(pwlist):
-                print '%d. %s' % (i, pw)
-
             if pwlist:
-                print ''
                 options = range(len(pwlist))
+                prompt = 'Select a number from the list ' + \
+                    'or type a new secret for ' + filename
+
+                for i, pw in enumerate(pwlist):
+                    print '%d. %s' % (i, pw)
+
+                print ''
             else:
                 options = None
-
-            prompt = 'Select a number from the list ' + \
-                'or type a new secret for ' + filename
+                prompt = 'Type a new secret for ' + filename
 
             secret = read_passphrase(prompt, confirm=True, options=options)
             if secret is False:
