@@ -1,10 +1,12 @@
 #!/usr/bin/env python
 
+import binascii
 import contextlib
 import errno
 import getpass
 import optparse
 import os
+import random
 import subprocess
 import sys
 import tempfile
@@ -15,14 +17,18 @@ version = '0.1'
 
 def print_help():
     print '''\
-Usage: sala [options] action file(s)...
+Usage: sala [options] action [file...]
 
 Store passwords and other sensitive information to plain text files.
 The information is protected by GPG's symmetrical encryption.
 
-Action can be "get" for reading entries or "set" for modifying or
-creating entries. Files and directories are created if they don't
-already exist.
+Actions:
+  init   Create a master key
+  get    Read entries
+  set    Create of modify entries
+
+When using "set", files and directories are created automatically if
+they don't already exist.
 
 Options:
   -v, --version  Show version number and exit
@@ -69,7 +75,7 @@ def read_passphrase(prompt, confirm=False, options=None):
     if confirm:
         other = getpass.getpass('Confirm: ')
         if other != passphrase:
-            print >>sys.stderr, 'Passphrases did not match'
+            print >>sys.stderr, 'Inputs did not match'
             return False
 
     return passphrase
@@ -83,7 +89,7 @@ def make_parent_dirs(filename):
             raise
 
 
-def generate_passphrases():
+def generate_passwords():
     p = subprocess.Popen(
         'pwgen -1 8 10', shell=True,
         stdout=subprocess.PIPE,
@@ -164,6 +170,123 @@ def gpg_decrypt(filename, passphrase):
     else:
         return content
 
+
+def read_master_key():
+    if not os.path.isfile('.salakey'):
+        print >>sys.stderr, "Error: Run `sala init' first"
+        return False
+
+    passphrase = read_passphrase('Enter the master passphrase')
+    if not passphrase:
+        return False
+
+    key = gpg_decrypt('.salakey', passphrase)
+    if not key:
+        print >>sys.stderr, 'Error: Unable to unlock the encryption key'
+        return False
+
+    print ''
+    return key
+
+
+def do_init(files):
+    if files:
+        print_help()
+
+    key_length = 64
+
+    if os.path.exists('.salakey'):
+        print >>sys.stderr, 'Error: The master key already exists'
+        return 1
+
+    print '''\
+Please pick a master passphrase. It is used to encrypt a very long
+random key, which in turn is used to encrypt all the private data in
+this directory.
+
+Make sure you remember the master passphrase and that it's strong
+enough for your privacy needs.
+'''
+
+    passphrase = read_passphrase('Enter the master passphrase', confirm=True)
+
+    print ''
+    print 'Generating a master key (%d bits)...' % (key_length * 8),
+
+    rng = random.SystemRandom()
+    data = ''.join(chr(rng.randint(0, 255)) for x in range(key_length))
+    key = binascii.hexlify(data)
+
+    gpg_encrypt('.salakey', passphrase, key)
+    print 'done'
+
+
+def do_get(files):
+    if not files:
+        print_help()
+
+    ensure_files_exist(files)
+
+    key = read_master_key()
+    if key is False:
+        return 1
+
+    for filename in files:
+        secret = gpg_decrypt(filename, key)
+        if secret:
+            print '%s: %s' % (filename, secret)
+        else:
+            print 'Error: Failed to decrypt %s' % filename
+        print ''
+
+
+def do_set(files):
+    if not files:
+        print_help()
+
+    key = read_master_key()
+    if key is False:
+        return 1
+
+    for filename in files:
+        pwlist = generate_passwords()
+        if pwlist:
+            options = range(len(pwlist))
+            prompt = 'Select a number from the list ' + \
+                'or type a new secret for ' + filename
+
+            for i, pw in enumerate(pwlist):
+                print '%d. %s' % (i, pw)
+
+            print ''
+        else:
+            options = None
+            prompt = 'Type a new secret for ' + filename
+
+        secret = read_passphrase(prompt, confirm=True, options=options)
+        if secret is False:
+            continue
+
+        if options:
+            try:
+                i = int(secret)
+                secret = pwlist[i]
+            except (ValueError, KeyError):
+                pass
+
+        make_parent_dirs(filename)
+        gpg_encrypt(filename, key, secret)
+
+        print ''
+
+
+actions = {
+    'init': do_init,
+    'get': do_get,
+    'set': do_set,
+}
+
+
 def main():
     parser = optparse.OptionParser(
         usage='%prog action [file...]',
@@ -177,62 +300,18 @@ def main():
     if options.version:
         print_version()
 
-    if options.help or not args or len(args) < 2:
+    if options.help or not args or len(args) < 1:
         print_help()
 
     action = args[0]
     files = args[1:]
 
-    if action not in ['get', 'set']:
+    do = actions.get(action)
+    if do is None:
         print_help()
 
-    if action == 'get':
-        ensure_files_exist(files)
+    return do(files)
 
-    passphrase = read_passphrase('Enter the master passphrase')
-    if not passphrase:
-        sys.exit(1)
-
-    print ''
-
-    if action == 'get':
-        for filename in files:
-            secret = gpg_decrypt(filename, passphrase)
-            if secret:
-                print '%s: %s' % (filename, secret)
-            else:
-                print 'Error: Failed to decrypt %s' % filename
-            print ''
-
-    elif action == 'set':
-        for filename in files:
-            pwlist = generate_passphrases()
-            if pwlist:
-                options = range(len(pwlist))
-                prompt = 'Select a number from the list ' + \
-                    'or type a new secret for ' + filename
-
-                for i, pw in enumerate(pwlist):
-                    print '%d. %s' % (i, pw)
-
-                print ''
-            else:
-                options = None
-                prompt = 'Type a new secret for ' + filename
-
-            secret = read_passphrase(prompt, confirm=True, options=options)
-            if secret is False:
-                continue
-
-            if options:
-                try:
-                    i = int(secret)
-                    secret = pwlist[i]
-                except (ValueError, KeyError):
-                    pass
-
-            make_parent_dirs(filename)
-            gpg_encrypt(filename, passphrase, secret)
 
 if __name__ == '__main__':
     sys.exit(main() or 0)
