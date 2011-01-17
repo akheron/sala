@@ -271,7 +271,7 @@ def do_set(files):
             try:
                 i = int(secret)
                 secret = pwlist[i]
-            except (ValueError, KeyError):
+            except (ValueError, IndexError):
                 pass
 
         make_parent_dirs(filename)
