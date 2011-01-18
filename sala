@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import ConfigParser
 import binascii
 import contextlib
 import errno
@@ -89,9 +90,10 @@ def make_parent_dirs(filename):
             raise
 
 
-def generate_passwords():
+def generate_passwords(cmd):
     p = subprocess.Popen(
-        'pwgen -nc 12 10', shell=True,
+        cmd,
+        shell=True,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE)
 
@@ -103,7 +105,7 @@ def generate_passwords():
         return data.split()
 
 
-def gpg_encrypt(filename, passphrase, content):
+def gpg_encrypt(config, filename, passphrase, content):
     logger = tempfile.TemporaryFile()
     stderr = tempfile.TemporaryFile()
     target = open(filename + '.tmp', 'w')
@@ -112,7 +114,7 @@ def gpg_encrypt(filename, passphrase, content):
         gnupg = GnuPGInterface.GnuPG()
         gnupg.options.armor = 1
         gnupg.options.meta_interactive = 0
-        gnupg.options.extra_args = ['--cipher-algo', 'AES256']
+        gnupg.options.extra_args = ['--cipher-algo', config.get('cipher')]
 
         p = gnupg.run(
             ['--symmetric'],
@@ -189,11 +191,11 @@ def read_master_key():
     return key
 
 
-def do_init(files):
+def do_init(config, files):
     if files:
         print_help()
 
-    key_length = 64
+    key_length = config.getint('key-length')
 
     if os.path.exists('.salakey'):
         print >>sys.stderr, 'Error: The master key already exists'
@@ -217,11 +219,11 @@ enough for your privacy needs.
     data = ''.join(chr(rng.randint(0, 255)) for x in range(key_length))
     key = binascii.hexlify(data)
 
-    gpg_encrypt('.salakey', passphrase, key)
+    gpg_encrypt(config, '.salakey', passphrase, key)
     print 'done'
 
 
-def do_get(files):
+def do_get(config, files):
     if not files:
         print_help()
 
@@ -240,7 +242,7 @@ def do_get(files):
         print ''
 
 
-def do_set(files):
+def do_set(config, files):
     if not files:
         print_help()
 
@@ -249,7 +251,7 @@ def do_set(files):
         return 1
 
     for filename in files:
-        pwlist = generate_passwords()
+        pwlist = generate_passwords(config.get('password-generator'))
         if pwlist:
             options = range(len(pwlist))
             prompt = 'Select a number from the list ' + \
@@ -275,7 +277,7 @@ def do_set(files):
                 pass
 
         make_parent_dirs(filename)
-        gpg_encrypt(filename, key, secret)
+        gpg_encrypt(config, filename, key, secret)
 
         print ''
 
@@ -285,6 +287,34 @@ actions = {
     'get': do_get,
     'set': do_set,
 }
+
+
+class Configuration(object):
+    DEFAULTS = {
+        'cipher': 'AES256',
+        'key-length': 64,
+        'password-generator': 'pwgen -nc 12 10',
+    }
+
+    def __init__(self):
+        self.parser = ConfigParser.RawConfigParser()
+
+        self.parser.add_section('sala')
+        for k, v in self.DEFAULTS.items():
+            self.parser.set('sala', k, v)
+
+        self.parser.read([os.path.expanduser('~/.sala.conf'), 'sala.conf'])
+
+    def __getattr__(self, key):
+        # Proxies ConfigParser getters like this:
+        #
+        #   config.getint(x) -> config.parser.getint('sala', x)
+        #
+
+        if key not in ['get', 'getint', 'getfloat', 'getboolean']:
+            raise AttributeError(key)
+
+        return lambda x: getattr(self.parser, key)('sala', x)
 
 
 def main():
@@ -303,6 +333,8 @@ def main():
     if options.help or not args or len(args) < 1:
         print_help()
 
+    config = Configuration()
+
     action = args[0]
     files = args[1:]
 
@@ -310,7 +342,7 @@ def main():
     if do is None:
         print_help()
 
-    return do(files)
+    return do(config, files)
 
 
 if __name__ == '__main__':
