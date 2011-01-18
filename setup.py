@@ -5,7 +5,7 @@ execfile('sala', context, context)
 
 setup(
     name='sala',
-    version=context['version'],
+    version=context['__version__'],
     author='Petri Lehtinen',
     author_email='petri@digip.org',
     url='http://www.digip.org/sala/',
