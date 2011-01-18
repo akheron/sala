@@ -5,12 +5,42 @@ sala lets you store passwords and other bits of sensitive plain-text
 information to encrypted files on a directory hierarchy. The
 information is protected by GnuPG's symmetrical encryption.
 
+Copyright (C) 2011 Petri Lehtinen. sala is free software; you can
+redistribute it and/or modify it under the terms of the MIT license.
+See the file LICENSE distributed with the source code for details.
+
+| Download: http://pypi.python.org/pypi/sala
+| Source code: http://github.com/akheron/sala
+| Author: Petri Lehtinen, http://www.digip.org
+
+.. contents::
+
 
 Basic usage
 ===========
 
-Create an empty directory for your password store, change into it, and
-invoke::
+Passwords are stored in a directory hierarchy, each file containing
+one secret, like this::
+
+    /path/to/passwords
+    |-- example-service.com
+    |   |-- +webmail
+    |   |   |-- @myuser
+    |   |   `-- @otheruser
+    |   `-- +adminpanel
+    |       `-- @admin
+    `-- my-linux-box
+        |-- @myuser
+        `-- @root
+
+I use a convention of naming directories after services and using
+``@username`` as the file name. If a service has groups, categories,
+subservices, etc., I use subdirectories whose names are prefixed with
+``+``. Of course, you can come up with your own scheme, for example if
+you want to hide the usernames, too.
+
+To create a new password store, first create an empty directory,
+change into it, and invoke::
 
     $ sala init
 
@@ -18,65 +48,79 @@ This command asks for the master passphrase you want to use for the
 store. It then initializes the password store by creating a long
 random key and encrypting it with the master passphrase.
 
-Passwords are stored in a directory hierarchy, like this::
+Create a new password for ``service/@myuser``::
 
-    /path/to/passwords
-    |-- .salakey
-    |-- site1
-    |   |-- +webmail
-    |   |   |-- @myuser
-    |   |   `-- @otheruser
-    |   `-- +adminpanel
-    |       `-- @admin
-    `-- my-linux-box
-        |-- @myuser
-        `-- @root
-
-I use a convention of naming directories after services, prefixing
-user names with ``@``, and groups, categories, etc. within a service
-with ``+``. Of course, you can come up with your own scheme. The file
-``.salakey`` contains the master key.
-
-Create a new password for ``site2/@myuser``::
-
-    $ sala set site2/@myuser
+    $ sala set service/@myuser
 
 This command first asks you for the master passphrase, and then the
-secret that should be stored to the file ``site2/@myuser``. The
-intermediate directory ``site2`` is created automatically. After this
-command, the directory hierarchy looks like this::
-
-    /path/to/passwords
-    |-- .salakey
-    |-- site1
-    |   |-- +webmail
-    |   |   |-- @myuser
-    |   |   `-- @otheruser
-    |   `-- +adminpanel
-    |       `-- @admin
-    |-- site2
-        `-- @myuser
-    `-- my-linux-box
-        |-- @myuser
-        `-- @root
+secret that should be stored to the file ``service/@myuser``. The
+intermediate directory ``service`` is created automatically.
 
 To read the secret you just stored, invoke::
 
-    $ sala get site2/@myuser
+    $ sala get service/@myuser
 
 This command asks again for the master passphrase, and outputs the
-secret stored in ``mysite.com/@myuser``.
+secret.
 
-The commands can also be used on multiple files at once::
+All the files are just normal files, so you can safely remove or
+rename a file if you want to.
 
-    sala set site3/@myuser site4/@otheruser
-    sala get site3/@myuser site4/@otheruser
+The above commands can also be used on multiple files at once::
 
-Under the hood, GnuPG's symmetric encryption is used. Only the the
-master key file ``.salakey`` is encrypted with your master passphrase.
-All the other files in the store are encrypted with the master key.
-The master key is very long, truly random string. Each encrypted file
-is in GnuPG's plain text (armor) format.
+    sala set service2/@myuser service3/@otheruser
+    sala get service2/@myuser service3/@otheruser
+
+
+Configuration
+=============
+
+sala can be configured with an INI-style configuration file. sala
+tries to read the configuration from ``~/.sala.conf`` and from
+``sala.conf`` in the top directory of the password store. Neither of
+the files are required. If a configuration setting is specified in
+both files, the the latter takes precedence.
+
+Here's the default configuration::
+
+    [sala]
+
+    # The cipher to use with GnuPG's symmetrical encryption.
+    # Run "gpg --version" to list supported ciphers.
+    cipher = AES256
+
+    # Master key length, in bytes
+    key-length = 64
+
+    # A shell command to run to generate password suggestions
+    password-generator = pwgen -nc 12 10
+
+Changing ``cipher`` only affects secrets that are set after the
+configuration setting is changed, i.e. the old secrets will not
+automatically be re-encrypted.
+
+Only ``sala init`` uses the ``key-length`` option. If you want the
+master key to be of a different size, make sure the configuration file
+exists before you run ``sala init``.
+
+The ``password-generator`` option is run through the shell to generate
+password suggestions. If the command fails (is not found or exits with
+non-zero exit status), its output is ignored. Othewise, the output
+should consist of one or more words separated with whitespace (space,
+tab, newline, etc.). These words are presented to the user as password
+suggestions by ``sala set``.
+
+
+Under the hood
+==============
+
+sala uses GnuPG's symmetric encryption. All encrypted files are in the
+GnuPG plain text (armor) format.
+
+When the password store is initialized, a very long, truly random key
+is generated and stored to the file ``.salakey``. Only this "master
+key" is encrypted with your master passphrase. All the other files in
+the store are encrypted with the master key.
 
 
 Installation
@@ -96,7 +140,9 @@ Requirements:
 * GnuPG_
 * GnuPGInterface_ for Python
 
-If pwgen_ is available, it is used to suggest passwords to the user.
+Suggested packages:
+
+* pwgen_: If found, used to suggest password to the user by default
 
 .. _Python: http://www.python.org/
 .. _GnuPG: http://www.gnupg.org/
