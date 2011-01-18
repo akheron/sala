@@ -342,9 +342,14 @@ def main():
     action = args[0]
     files = args[1:]
 
-    do = actions.get(action)
-    if do is None:
-        print_help()
+    if action not in actions:
+        files = [action] + files
+        if os.path.exists(files[0]):
+            do = actions['get']
+        else:
+            do = actions['set']
+    else:
+        do = actions[action]
 
     return do(config, files)
 

@@ -64,12 +64,22 @@ This command asks again for the master passphrase, and outputs the
 secret.
 
 All the files are just normal files, so you can safely remove or
-rename a file if you want to.
+rename files if you want to.
 
 The above commands can also be used on multiple files at once::
 
     sala set service2/@myuser service3/@otheruser
     sala get service2/@myuser service3/@otheruser
+
+If no command is specified, sala assumes ``get`` if the first file
+exists and ``set`` otherwise. That is, the command::
+
+    sala foo/@bar
+
+reads the secret ``foo/@bar`` if the file exists, and creates a new
+secret otherwise. Note that this may not work as you expect for
+multiple files, as the existence of the first file determines whether
+to read or to write.
 
 
 Configuration
@@ -83,6 +93,7 @@ both files, the the latter takes precedence.
 
 Here's the default configuration::
 
+    # All configuration settings are in the [sala] section.
     [sala]
 
     # The cipher to use with GnuPG's symmetrical encryption.
