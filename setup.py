@@ -13,4 +13,10 @@ setup(
     long_description=open('README.rst').read(),
     license='MIT',
     scripts=['sala'],
+    classifiers=[
+        'Programming Language :: Python',
+        'License :: OSI Approved :: MIT License',
+        'Environment :: Console',
+        'Topic :: Utilities',
+    ],
 )
