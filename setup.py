@@ -10,7 +10,11 @@ setup(
     author_email='petri@digip.org',
     url='http://www.digip.org/sala/',
     description='Encrypted plaintext password store',
-    long_description=open('README.rst').read(),
+    long_description=''.join([
+        open('README.rst').read(),
+        '\n\n',
+        open('CHANGES').read()
+    ]),
     license='MIT',
     scripts=['sala'],
     classifiers=[
