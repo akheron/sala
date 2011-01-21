@@ -8,7 +8,6 @@ setup(
     version=context['__version__'],
     author='Petri Lehtinen',
     author_email='petri@digip.org',
-    url='http://www.digip.org/sala/',
     description='Encrypted plaintext password store',
     long_description=''.join([
         open('README.rst').read(),
