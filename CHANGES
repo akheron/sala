@@ -1,6 +1,11 @@
 Release history
 ===============
 
+Version 1.0.2 (in development)
+------------------------------
+
+* Add support for Python 2.5
+
 Version 1.0.1
 -------------
 
