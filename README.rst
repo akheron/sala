@@ -1,11 +1,11 @@
-sala -- Simple encrypted password storage
+Sala -- Simple encrypted password storage
 *****************************************
 
-sala lets you store passwords and other bits of sensitive plain-text
+Sala lets you store passwords and other bits of sensitive plain-text
 information to encrypted files on a directory hierarchy. The
 information is protected by GnuPG's symmetrical encryption.
 
-Copyright (C) 2011 Petri Lehtinen. sala is free software; you can
+Copyright (C) 2011 Petri Lehtinen. Sala is free software; you can
 redistribute it and/or modify it under the terms of the MIT license.
 See the file LICENSE distributed with the source code for details.
 
@@ -36,8 +36,9 @@ one secret, like this::
 I use a convention of naming directories after services and using
 ``@username`` as the file name. If a service has groups, categories,
 subservices, etc., I use subdirectories whose names are prefixed with
-``+``. Of course, you can come up with your own scheme, for example if
-you want to hide the usernames, too.
+``+``. This naming scheme is not enforced by sala, and you can come up
+with your own scheme, for example if you want to hide the usernames,
+too.
 
 To create a new password store, first create an empty directory,
 change into it, and invoke::
@@ -85,11 +86,11 @@ to read or to write.
 Configuration
 =============
 
-sala can be configured with an INI-style configuration file. sala
+Sala can be configured with an INI-style configuration file. Sala
 tries to read the configuration from ``~/.sala.conf`` and from
 ``sala.conf`` in the top directory of the password store. Neither of
 the files are required. If a configuration setting is specified in
-both files, the the latter takes precedence.
+both files, the the file in the password store takes precedence.
 
 Here's the default configuration::
 
@@ -107,8 +108,8 @@ Here's the default configuration::
     password-generator = pwgen -nc 12 10
 
 Changing ``cipher`` only affects secrets that are set after the
-configuration setting is changed, i.e. the old secrets will not
-automatically be re-encrypted.
+configuration setting is changed. Old secrets will not automatically
+be re-encrypted.
 
 Only ``sala init`` uses the ``key-length`` option. If you want the
 master key to be of a different size, make sure the configuration file
@@ -125,7 +126,7 @@ suggestions by ``sala set``.
 Under the hood
 ==============
 
-sala uses GnuPG's symmetric encryption. All encrypted files are in the
+Sala uses GnuPG's symmetric encryption. All encrypted files are in the
 GnuPG plain text (armor) format.
 
 When the password store is initialized, a very long, truly random key
@@ -153,7 +154,8 @@ Requirements:
 
 Suggested packages:
 
-* pwgen_: If found, used to suggest password to the user by default
+* pwgen_: With the default configuration, if ``pwgen`` is installed,
+  it's used to suggest good passwords to the user
 
 .. _Python: http://www.python.org/
 .. _GnuPG: http://www.gnupg.org/
