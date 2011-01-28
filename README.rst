@@ -87,10 +87,12 @@ Configuration
 =============
 
 Sala can be configured with an INI-style configuration file. Sala
-tries to read the configuration from ``~/.sala.conf`` and from
-``sala.conf`` in the top directory of the password store. Neither of
-the files are required. If a configuration setting is specified in
-both files, the the file in the password store takes precedence.
+tries to read the configuration from ``~/.sala.conf``,
+``~/.config/sala.conf`` (more specifically
+``$XDG_CONFIG_HOME/sala.conf``) and ``sala.conf`` in the top directory
+of the password store, in this order. None of the files are required.
+If a configuration setting is specified in more than one file, the
+latter file (in the list above) takes precedence.
 
 Here's the default configuration::
 

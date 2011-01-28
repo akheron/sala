@@ -1,10 +1,13 @@
 Release history
 ===============
 
-Version 1.0.2 (in development)
-------------------------------
+Version 1.1 (in development)
+----------------------------
 
 * Add support for Python 2.5
+
+* Read configuration from ``$XDG_CONFIG_HOME/sala.conf``, too
+
 
 Version 1.0.1
 -------------

@@ -308,7 +308,17 @@ class Configuration(object):
         for k, v in self.DEFAULTS.items():
             self.parser.set('sala', k, v)
 
-        self.parser.read([os.path.expanduser('~/.sala.conf'), 'sala.conf'])
+        xdg_config_home = os.environ.get('XDG_CONFIG_HOME')
+        if xdg_config_home is None:
+            xdg_config_home = os.path.expanduser('~/.config')
+
+        config_files = [
+            os.path.expanduser('~/.sala.conf'),
+            os.path.join(xdg_config_home, 'sala.conf'),
+            'sala.conf',
+        ]
+
+        self.parser.read(config_files)
 
     def __getattr__(self, key):
         # Proxies ConfigParser getters like this:
