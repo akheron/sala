@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 from __future__ import with_statement
 
 __version__ = '1.1'
@@ -11,9 +10,7 @@ the source code for details.
 
 The source code is available at http://pypi.python.org/pypi/sala.'''
 
-import ConfigParser
 import binascii
-import contextlib
 import errno
 import getpass
 import optparse
@@ -21,9 +18,9 @@ import os
 import random
 import subprocess
 import sys
-import tempfile
 
-import GnuPGInterface
+from sala.config import Configuration
+from sala.gpg import gpg_encrypt, gpg_decrypt
 
 def print_help():
     print '''\
@@ -108,74 +105,6 @@ def generate_passwords(cmd):
         return []
     else:
         return data.split()
-
-
-def gpg_encrypt(config, filename, passphrase, content):
-    logger = tempfile.TemporaryFile()
-    stderr = tempfile.TemporaryFile()
-    target = open(filename + '.tmp', 'w')
-
-    with contextlib.nested(logger, stderr, target):
-        gnupg = GnuPGInterface.GnuPG()
-        gnupg.options.armor = 1
-        gnupg.options.meta_interactive = 0
-        gnupg.options.extra_args = ['--cipher-algo', config.get('cipher')]
-
-        p = gnupg.run(
-            ['--symmetric'],
-            create_fhs=['stdin', 'passphrase'],
-            attach_fhs={
-                'stdout': target,
-                'stderr': stderr,
-                'logger': logger,
-            })
-
-        p.handles['passphrase'].write(passphrase)
-        p.handles['passphrase'].close()
-
-        p.handles['stdin'].write(content)
-        p.handles['stdin'].close()
-
-    try:
-        p.wait()
-    except IOError, exc:
-        print >>sys.stderr, exc
-        os.remove(filename + '.tmp')
-    else:
-        os.rename(filename + '.tmp', filename)
-
-
-def gpg_decrypt(filename, passphrase):
-    logger = tempfile.TemporaryFile()
-    stderr = tempfile.TemporaryFile()
-    source = open(filename)
-
-    with contextlib.nested(logger, stderr, source):
-        gnupg = GnuPGInterface.GnuPG()
-        gnupg.options.armor = 1
-        gnupg.options.meta_interactive = 0
-
-        p = gnupg.run(
-            ['--decrypt'],
-            create_fhs=['stdout', 'passphrase'],
-            attach_fhs={
-                'stdin': source,
-                'stderr': stderr,
-                'logger': logger,
-            })
-
-        p.handles['passphrase'].write(passphrase)
-        p.handles['passphrase'].close()
-
-        content = p.handles['stdout'].read()
-        p.handles['stdout'].close()
-
-    try:
-        p.wait()
-    except IOError:
-        return ''
-    else:
-        return content
 
 
 def read_master_key():
@@ -294,44 +223,6 @@ actions = {
 }
 
 
-class Configuration(object):
-    DEFAULTS = {
-        'cipher': 'AES256',
-        'key-length': 64,
-        'password-generator': 'pwgen -nc 12 10',
-    }
-
-    def __init__(self):
-        self.parser = ConfigParser.RawConfigParser()
-
-        self.parser.add_section('sala')
-        for k, v in self.DEFAULTS.items():
-            self.parser.set('sala', k, v)
-
-        xdg_config_home = os.environ.get('XDG_CONFIG_HOME')
-        if xdg_config_home is None:
-            xdg_config_home = os.path.expanduser('~/.config')
-
-        config_files = [
-            os.path.expanduser('~/.sala.conf'),
-            os.path.join(xdg_config_home, 'sala.conf'),
-            'sala.conf',
-        ]
-
-        self.parser.read(config_files)
-
-    def __getattr__(self, key):
-        # Proxies ConfigParser getters like this:
-        #
-        #   config.getint(x) -> config.parser.getint('sala', x)
-        #
-
-        if key not in ['get', 'getint', 'getfloat', 'getboolean']:
-            raise AttributeError(key)
-
-        return lambda x: getattr(self.parser, key)('sala', x)
-
-
 def main():
     parser = optparse.OptionParser(
         usage='%prog action [file...]',
@@ -363,7 +254,3 @@ def main():
         do = actions[action]
 
     return do(config, files)
-
-
-if __name__ == '__main__':
-    sys.exit(main() or 0)

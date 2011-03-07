@@ -1,7 +1,7 @@
 from distutils.core import setup
 
 context = {}
-execfile('sala', context, context)
+execfile('sala/__init__.py', context, context)
 
 setup(
     name='sala',
@@ -15,7 +15,8 @@ setup(
         open('CHANGES').read()
     ]),
     license='MIT',
-    scripts=['sala'],
+    packages=['sala'],
+    scripts=['bin/sala'],
     classifiers=[
         'Programming Language :: Python',
         'Programming Language :: Python :: 2.5',
