@@ -43,7 +43,6 @@ Requirements:
 
 * Python_ 2.5 or newer. Currently, 3.x is not supported.
 * GnuPG_
-* GnuPGInterface_ for Python
 
 Suggested packages:
 
@@ -52,5 +51,4 @@ Suggested packages:
 
 .. _Python: http://www.python.org/
 .. _GnuPG: http://www.gnupg.org/
-.. _GnuPGInterface: http://py-gnupg.sourceforge.net/
 .. _pwgen: http://sourceforge.net/projects/pwgen/
