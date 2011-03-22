@@ -1,0 +1,41 @@
+body {
+  font-family: Georgia, serif;
+  margin-left: 40px;
+  max-width: 550pt;
+}
+
+.header {
+  margin-left: -35px;
+}
+
+.header .left {
+  float: left;
+}
+
+.header .center {
+  text-align: center;
+}
+
+.header .right {
+  float: right;
+}
+
+.section > :first-child {
+  margin-left: -35px;
+}
+
+h2 {
+  font-size: 15pt;
+}
+
+.literal-block {
+  margin-left: 40px;
+}
+
+ul {
+  list-style-type: square;
+}
+
+.option-list td {
+  padding-right: 10pt;
+}

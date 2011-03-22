@@ -16,7 +16,7 @@ encrypted plaintext password store
 SYNOPSIS
 ========
 
-sala [*OPTIONS*]... [*COMMAND*] [*FILE*]...
+**sala** [*OPTIONS*]... [*COMMAND*] [*FILE*]...
 
 DESCRIPTION
 ===========
@@ -25,47 +25,42 @@ Store passwords and other bits of sensitive plain-text information to
 encrypted files on a directory hierarchy. The information is protected
 by GnuPG's symmetrical encryption.
 
-Commands
---------
-
-sala init
+``sala init``
     Initialize a password store
 
-sala get FILE...
+``sala get FILE...``
     Read secret(s)
 
-sala set FILE...
+``sala set FILE...``
     Create or modify secret(s)
 
-sala FILE...
+``sala FILE...``
     Read or modify, depending on whether the first file exists or not
 
 
-Options
--------
+OPTIONS
+=======
 
 -v, --version     Show version information
 -h, --help        Show help
 
 
-HOW IT WORKS
-============
+TUTORIAL
+========
 
 Passwords are stored in a directory hierarchy, each file containing
-one secret, like this:
+one secret, like this::
 
-    ::
-
-        /path/to/passwords
-        |-- example-service.com
-        |   |-- +webmail
-        |   |   |-- @myuser
-        |   |   `-- @otheruser
-        |   `-- +adminpanel
-        |       `-- @admin
-        `-- my-linux-box
-            |-- @myuser
-            `-- @root
+    /path/to/passwords
+    |-- example-service.com
+    |   |-- +webmail
+    |   |   |-- @myuser
+    |   |   `-- @otheruser
+    |   `-- +adminpanel
+    |       `-- @admin
+    `-- my-linux-box
+        |-- @myuser
+        `-- @root
 
 I use a convention of naming directories after services and using
 ``@username`` as the file name. If a service has groups, categories,
@@ -75,31 +70,25 @@ with your own scheme, for example if you want to hide the usernames,
 too.
 
 To create a new password store, first create an empty directory,
-change into it, and invoke:
+change into it, and invoke::
 
-    ::
-
-        $ sala init
+    $ sala init
 
 This command asks for the master passphrase you want to use for the
 store. It then initializes the password store by creating a long
 random key and encrypting it with the master passphrase.
 
-Create a new password for ``service/@myuser``:
+Create a new password for ``service/@myuser``::
 
-    ::
-
-        $ sala set service/@myuser
+    $ sala set service/@myuser
 
 This command first asks you for the master passphrase, and then the
 secret that should be stored to the file ``service/@myuser``. The
 intermediate directory ``service`` is created automatically.
 
-To read the secret you just stored, invoke:
+To read the secret you just stored, invoke::
 
-    ::
-
-        $ sala get service/@myuser
+    $ sala get service/@myuser
 
 This command asks again for the master passphrase, and outputs the
 secret.
@@ -107,19 +96,15 @@ secret.
 All the files are just normal files, so you can safely remove or
 rename files if you want to.
 
-The above commands can also be used on multiple files at once:
+The above commands can also be used on multiple files at once::
 
-    ::
-
-        $ sala set service2/@myuser service3/@otheruser
-        $ sala get service2/@myuser service3/@otheruser
+    $ sala set service2/@myuser service3/@otheruser
+    $ sala get service2/@myuser service3/@otheruser
 
 If no command is specified, sala assumes ``get`` if the first file
-exists and ``set`` otherwise. That is, the command:
+exists and ``set`` otherwise. That is, the command::
 
-    ::
-
-        $ sala foo/@bar
+    $ sala foo/@bar
 
 reads the secret ``foo/@bar`` if the file exists, and creates a new
 secret otherwise. Note that this may not work as you expect for
@@ -131,29 +116,33 @@ CONFIGURATION
 =============
 
 Sala can be configured with an ini-style configuration file. Sala
-tries to read the configuration from ``~/.sala.conf``,
-``~/.config/sala.conf`` (more specifically
-``$XDG_CONFIG_HOME/sala.conf``) and ``sala.conf`` in the top directory
-of the password store, in this order. None of the files are required.
-If a configuration setting is specified in more than one file, the
-latter file (in the list above) takes precedence.
+tries to read its configuration files in this order:
 
-Here's the default configuration:
+* ``~/.sala.conf``
 
-    ::
+* ``~/.config/sala.conf`` (more specifically
+  ``$XDG_CONFIG_HOME/sala.conf``)
 
-        # All configuration settings are in the [sala] section.
-        [sala]
+* ``sala.conf`` in the top directory of the password store
 
-        # The cipher to use with GnuPG's symmetrical encryption.
-        # Run "gpg --version" to list supported ciphers.
-        cipher = AES256
+None of the files are required. If a configuration setting is
+specified in more than one file, the latter file (in the list above)
+takes precedence.
 
-        # Master key length, in bytes
-        key-length = 64
+Here's the default configuration::
 
-        # A shell command for generating password suggestions
-        password-generator = pwgen -nc 12 10
+    # All configuration settings are in the [sala] section.
+    [sala]
+
+    # The cipher to use with GnuPG's symmetrical encryption.
+    # Run "gpg --version" to list supported ciphers.
+    cipher = AES256
+
+    # Master key length, in bytes
+    key-length = 64
+
+    # A shell command for generating password suggestions
+    password-generator = pwgen -nc 12 10
 
 Changing ``cipher`` only affects secrets that are set after the
 configuration setting is changed. Old secrets will not automatically
@@ -181,3 +170,10 @@ When the password store is initialized, a very long, truly random key
 is generated and stored to the file ``.salakey``. Only this "master
 key" is encrypted with your master passphrase. All the other files in
 the store are encrypted with the master key.
+
+
+FILES
+=====
+
+``~/.sala.conf``, ``$XDG_CONFIG_HOME/sala.conf``, ``sala.conf``
+    Configuration files, See CONFIGURATION_ above.
