@@ -107,23 +107,31 @@ class Translator(html4css1.HTMLTranslator):
     def _docinfo_section(self, item):
         self._section(item.upper(), self._docinfo[item])
 
+    def visit_document(self, node):
+        # Override the original with empty, as we don't want to add
+        # <title> yet
+        pass
+
     def depart_document(self, node):
+        man_entry = '%s(%s)' % (
+            self._doc_title.upper(),
+            self._docinfo['manual_section'],
+        )
+
+        self.head.append('<title>%s</title>' % self.encode(man_entry))
+
         self.body_pre_docinfo = [
             '<div class="header">',
             '<div class="left">',
-            self.encode('%s(%s)' % (
-                self._doc_title.upper(),
-                self._docinfo['manual_section'],
-            )),
+            self.encode(man_entry),
+            '</div>',
+            '<div class="right">',
+            self.encode(man_entry),
             '</div>',
             '<div class="center">',
             self.encode(self._docinfo['manual_group']),
-            '<div class="right">',
-            self.encode('%s(%s)' % (
-                self._doc_title.upper(),
-                self._docinfo['manual_section'],
-            )),
-            '</div></div></div>',
+            '</div>',
+            '</div>\n',
         ]
         self._section(
             'NAME',
