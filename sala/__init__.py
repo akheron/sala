@@ -22,6 +22,19 @@ import sys
 from sala.config import Configuration
 from sala.gpg import gpg_encrypt, gpg_decrypt
 
+if os.environ.get('SALA_TESTS_RUNNING'):
+    # getpass() reads from TTY. Override this behavior in tests.
+    def _simple_getpass(prompt=None):
+        if prompt:
+            print prompt
+        return sys.stdin.readline().strip()
+    getpass.getpass = _simple_getpass
+
+    # To synchronize stdout and stderr output, use the same stream for
+    # both
+    sys.stderr = sys.stdout
+
+
 def print_help():
     print '''\
 Usage: sala [options] action [file...]
@@ -58,12 +71,14 @@ def ensure_files_exist(files):
 
     if len(absent) == 1:
         print >>sys.stderr, 'Error: File does not exist:', absent[0]
-        sys.exit(1)
+        return False
 
     elif absent:
         print >>sys.stderr, 'Error: The following files do not exist:', \
             ', '.join(absent)
-        sys.exit(1)
+        return False
+
+    return True
 
 
 def read_passphrase(prompt, confirm=False, options=None):
@@ -85,11 +100,13 @@ def read_passphrase(prompt, confirm=False, options=None):
 
 
 def make_parent_dirs(filename):
-    try:
-        os.makedirs(os.path.dirname(filename))
-    except OSError, exc:
-        if exc.errno != errno.EEXIST:
-            raise
+    dirname = os.path.dirname(filename)
+    if dirname:
+        try:
+            os.makedirs(dirname)
+        except OSError, exc:
+            if exc.errno != errno.EEXIST:
+                raise
 
 
 def generate_passwords(cmd):
@@ -116,12 +133,13 @@ def read_master_key():
     if not passphrase:
         return False
 
+    print ''
+
     key = gpg_decrypt('.salakey', passphrase)
     if not key:
         print >>sys.stderr, 'Error: Unable to unlock the encryption key'
         return False
 
-    print ''
     return key
 
 
@@ -145,6 +163,8 @@ enough for your privacy needs.
 '''
 
     passphrase = read_passphrase('Enter the master passphrase', confirm=True)
+    if passphrase is False:
+        return 1
 
     print ''
     print 'Generating a master key (%d bits)...' % (key_length * 8),
@@ -161,7 +181,8 @@ def do_get(config, files):
     if not files:
         print_help()
 
-    ensure_files_exist(files)
+    if not ensure_files_exist(files):
+        return 1
 
     key = read_master_key()
     if key is False:
@@ -201,7 +222,7 @@ def do_set(config, files):
 
         secret = read_passphrase(prompt, confirm=True, options=options)
         if secret is False:
-            continue
+            return 1
 
         if options:
             try:

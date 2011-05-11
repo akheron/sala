@@ -3,3 +3,5 @@
 /build
 *.pyc
 *.pyo
+.noseids
+.coverage
