@@ -19,6 +19,7 @@ Help:
   Options:
     -v, --version  Show version number and exit
     -h, --help     Show this help
+    -r, --raw      Use a simple output format for machine processing
   [2]
 
 Version:

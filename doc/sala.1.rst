@@ -43,6 +43,7 @@ OPTIONS
 
 -v, --version     Show version information
 -h, --help        Show help
+-r, --raw         Use a simple output format for machine processing
 
 
 TUTORIAL

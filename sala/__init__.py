@@ -52,7 +52,8 @@ they don't already exist.
 
 Options:
   -v, --version  Show version number and exit
-  -h, --help     Show this help'''
+  -h, --help     Show this help
+  -r, --raw      Use a simple output format for machine processing'''
     sys.exit(2)
 
 
@@ -133,17 +134,16 @@ def read_master_key():
     if not passphrase:
         return False
 
-    print ''
-
     key = gpg_decrypt('.salakey', passphrase)
     if not key:
+        print >>sys.stderr, ''
         print >>sys.stderr, 'Error: Unable to unlock the encryption key'
         return False
 
     return key
 
 
-def do_init(config, files):
+def do_init(config, files, options):
     if files:
         print_help()
 
@@ -177,7 +177,7 @@ enough for your privacy needs.
     print 'done'
 
 
-def do_get(config, files):
+def do_get(config, files, options):
     if not files:
         print_help()
 
@@ -188,22 +188,40 @@ def do_get(config, files):
     if key is False:
         return 1
 
-    for filename in files:
-        secret = gpg_decrypt(filename, key)
+    # Human-readable output
+    def normal_output(filename, secret):
         if secret:
             print '%s: %s' % (filename, secret)
         else:
             print 'Error: Failed to decrypt %s' % filename
         print ''
 
+    # Machine-readable output
+    def raw_output(filename, secret):
+        if secret:
+            print secret
+        else:
+            print >>sys.stderr, 'Error: Failed to decrypt %s' % filename
 
-def do_set(config, files):
+    if options.raw:
+        output = raw_output
+    else:
+        print ''
+        output = normal_output
+
+    for filename in files:
+        output(filename, gpg_decrypt(filename, key))
+
+
+def do_set(config, files, options):
     if not files:
         print_help()
 
     key = read_master_key()
     if key is False:
         return 1
+
+    print ''
 
     for filename in files:
         pwlist = generate_passwords(config.get('password-generator'))
@@ -251,6 +269,7 @@ def main():
         )
     parser.add_option('-h', '--help', action='store_true')
     parser.add_option('-v', '--version', action='store_true')
+    parser.add_option('-r', '--raw', action='store_true')
 
     options, args = parser.parse_args()
 
@@ -274,4 +293,4 @@ def main():
     else:
         do = actions[action]
 
-    return do(config, files)
+    return do(config, files, options)

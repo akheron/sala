@@ -19,6 +19,7 @@ Invalid arguments:
   Options:
     -v, --version  Show version number and exit
     -h, --help     Show this help
+    -r, --raw      Use a simple output format for machine processing
   [2]
 
 No password store initialized:
@@ -71,6 +72,17 @@ Decrypt a secret:
   
   $ cleanup
 
+Decrypt a secret, with raw output format:
+
+  $ init_password_store testpassword
+  $ encrypt_secret @bar testpassword secret
+  $ sala get -r @bar <<EOF
+  > testpassword
+  > EOF
+  Enter the master passphrase: 
+  secret
+  $ cleanup
+
 Decrypt multiple secrets at once:
 
   $ init_password_store testpassword
@@ -89,6 +101,22 @@ Decrypt multiple secrets at once:
   
   buzz: secret3
   
+  $ cleanup
+
+Decrypt multiple secrets at once, with raw output format:
+
+  $ init_password_store testpassword
+  $ mkdir foo
+  $ encrypt_secret foo/@bar testpassword secret1
+  $ encrypt_secret foo/@baz testpassword secret2
+  $ encrypt_secret buzz testpassword secret3
+  $ sala get -r foo/@bar foo/@baz buzz <<EOF
+  > testpassword
+  > EOF
+  Enter the master passphrase: 
+  secret1
+  secret2
+  secret3
   $ cleanup
 
 Empty master passphrase given:
