@@ -2,13 +2,7 @@
 #
 # Copyright (C) 2011 Petri Lehtinen
 
-'''rst2man.py from docutils, tweaked for nicer output
-
-Changes:
-
-- 
-
-'''
+'''rst2man.py from docutils, tweaked for nicer output'''
 
 import locale
 try:
