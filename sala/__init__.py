@@ -67,8 +67,12 @@ def print_version():
 def ensure_files_exist(config, files):
     absent = []
     for filename in files:
-        if not os.access(os.path.join(config.topdir, filename), os.R_OK):
+        try:
+            fobj = open(os.path.join(config.topdir, filename))
+        except IOError:
             absent.append(filename)
+        else:
+            fobj.close()
 
     if len(absent) == 1:
         print >>sys.stderr, 'Error: File does not exist:', absent[0]
