@@ -108,3 +108,21 @@ $HOME/.sala.conf (with CAST5 cipher) should be active.
   > EOF
   $ gpg_decrypt .salakey testpassword 2>&1 | head -n 1
   gpg: CAST5 encrypted data
+
+  $ cleanup
+
+Initialize with a config file using SALADIR:
+
+  $ mkdir store workdir
+  $ write_config store/sala.conf <<EOF
+  > cipher BLOWFISH
+  > EOF
+  $ (cd workdir && SALADIR=../store sala init >/dev/null 2>&1) <<EOF
+  > testpassword
+  > testpassword
+  > EOF
+  $ gpg_decrypt store/.salakey testpassword 2>&1 | head -n 1
+  gpg: BLOWFISH encrypted data
+
+  $ test -f workdir/.salakey
+  [1]

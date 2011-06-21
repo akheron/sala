@@ -91,3 +91,34 @@ Initialize twice:
   Error: The master key already exists
   [1]
 
+  $ cleanup
+
+Initialize a store using SALADIR:
+
+  $ mkdir store
+  $ SALADIR=store sala init >/dev/null 2>&1 <<EOF
+  > testpassword
+  > testpassword
+  > EOF
+
+  $ cat store/.salakey | head -n 1
+  -----BEGIN PGP MESSAGE-----
+
+  $ test -f .salakey
+  [1]
+
+  $ cleanup
+
+Initialize a store using -C:
+
+  $ mkdir store
+  $ sala -C store init >/dev/null 2>&1 <<EOF
+  > testpassword
+  > testpassword
+  > EOF
+
+  $ cat store/.salakey | head -n 1
+  -----BEGIN PGP MESSAGE-----
+
+  $ test -f .salakey
+  [1]

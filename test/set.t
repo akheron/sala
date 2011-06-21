@@ -72,7 +72,7 @@ Set many secrets with one command:
 
   $ cleanup
 
-Set a file in the top directory:
+Set a secret in the top directory:
 
   $ init_password_store testpassword
   $ sala set foo <<EOF
@@ -87,6 +87,50 @@ Set a file in the top directory:
   
   $ decrypt_secret foo testpassword
   secret (no-eol)
+
+  $ cleanup
+
+Set a secret, using SALADIR:
+
+  $ mkdir store
+  $ (cd store && init_password_store testpassword)
+  $ SALADIR=store sala set foo <<EOF
+  > testpassword
+  > secret
+  > secret
+  > EOF
+  Enter the master passphrase: 
+  
+  Type a new secret for foo: 
+  Confirm: 
+  
+  $ (cd store && decrypt_secret foo testpassword)
+  secret (no-eol)
+
+  $ test -f foo
+  [1]
+
+  $ cleanup
+
+Set a secret, using -C:
+
+  $ mkdir store
+  $ (cd store && init_password_store testpassword)
+  $ sala -C store set foo <<EOF
+  > testpassword
+  > secret
+  > secret
+  > EOF
+  Enter the master passphrase: 
+  
+  Type a new secret for foo: 
+  Confirm: 
+  
+  $ (cd store && decrypt_secret foo testpassword)
+  secret (no-eol)
+
+  $ test -f foo
+  [1]
 
   $ cleanup
 
@@ -194,5 +238,49 @@ Implicit set with multiple files, one of which already exists:
   secret2 (no-eol)
   $ decrypt_secret @baz testpassword
   secret3 (no-eol)
+
+  $ cleanup
+
+Implicit set with SALADIR:
+
+  $ mkdir store
+  $ (cd store && init_password_store testpassword)
+  $ SALADIR=store sala @bar <<EOF
+  > testpassword
+  > secret
+  > secret
+  > EOF
+  Enter the master passphrase: 
+  
+  Type a new secret for @bar: 
+  Confirm: 
+  
+  $ (cd store && decrypt_secret @bar testpassword)
+  secret (no-eol)
+
+  $ test -f @bar
+  [1]
+
+  $ cleanup
+
+Implicit set with -C:
+
+  $ mkdir store
+  $ (cd store && init_password_store testpassword)
+  $ sala -C store @bar <<EOF
+  > testpassword
+  > secret
+  > secret
+  > EOF
+  Enter the master passphrase: 
+  
+  Type a new secret for @bar: 
+  Confirm: 
+  
+  $ (cd store && decrypt_secret @bar testpassword)
+  secret (no-eol)
+
+  $ test -f @bar
+  [1]
 
   $ cleanup

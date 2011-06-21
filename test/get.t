@@ -72,6 +72,34 @@ Decrypt a secret:
   
   $ cleanup
 
+Decrypt a secret using SALADIR:
+
+  $ mkdir store
+  $ (cd store && init_password_store testpassword)
+  $ (cd store && encrypt_secret @bar testpassword secret)
+  $ SALADIR=store sala get @bar <<EOF
+  > testpassword
+  > EOF
+  Enter the master passphrase: 
+  
+  @bar: secret
+  
+  $ cleanup
+
+Decrypt a secret using -C:
+
+  $ mkdir store
+  $ (cd store && init_password_store testpassword)
+  $ (cd store && encrypt_secret @bar testpassword secret)
+  $ sala -C store get @bar <<EOF
+  > testpassword
+  > EOF
+  Enter the master passphrase: 
+  
+  @bar: secret
+  
+  $ cleanup
+
 Decrypt a secret, with raw output format:
 
   $ init_password_store testpassword
@@ -169,4 +197,32 @@ Implicit get with one file missing:
   Error: File does not exist: @bar
   [1]
 
+  $ cleanup
+
+Implicit get with SALADIR:
+
+  $ mkdir store
+  $ (cd store && init_password_store testpassword)
+  $ (cd store && encrypt_secret @bar testpassword secret)
+  $ SALADIR=store sala @bar <<EOF
+  > testpassword
+  > EOF
+  Enter the master passphrase: 
+  
+  @bar: secret
+  
+  $ cleanup
+
+Implicit get with -C:
+
+  $ mkdir store
+  $ (cd store && init_password_store testpassword)
+  $ (cd store && encrypt_secret @bar testpassword secret)
+  $ sala -C store @bar <<EOF
+  > testpassword
+  > EOF
+  Enter the master passphrase: 
+  
+  @bar: secret
+  
   $ cleanup

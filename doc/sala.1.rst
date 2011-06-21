@@ -43,6 +43,7 @@ OPTIONS
 
 -v, --version     Show version information
 -h, --help        Show help
+-C DIR            Use a password store in DIR instead of current directory
 -r, --raw         Use a simple output format for machine processing
 
 
@@ -171,6 +172,14 @@ When the password store is initialized, a very long, truly random key
 is generated and stored to the file ``.salakey``. Only this "master
 key" is encrypted with your master passphrase. All the other files in
 the store are encrypted with the master key.
+
+
+ENVIRONMENT
+===========
+
+``SALADIR``
+    If set, use a password store in this directory instead of the
+    current directory.
 
 
 FILES

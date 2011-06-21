@@ -1,6 +1,7 @@
 import ConfigParser
 import os
 
+
 class Configuration(object):
     DEFAULTS = {
         'cipher': 'AES256',
@@ -8,7 +9,7 @@ class Configuration(object):
         'password-generator': 'pwgen -nc 12 10',
     }
 
-    def __init__(self):
+    def __init__(self, topdir):
         self.parser = ConfigParser.RawConfigParser()
 
         self.parser.add_section('sala')
@@ -22,10 +23,13 @@ class Configuration(object):
         config_files = [
             os.path.expanduser('~/.sala.conf'),
             os.path.join(xdg_config_home, 'sala.conf'),
-            'sala.conf',
+            os.path.join(topdir, 'sala.conf'),
         ]
 
         self.parser.read(config_files)
+
+        self.topdir = topdir
+        self.keyfile = os.path.join(topdir, '.salakey')
 
     def __getattr__(self, key):
         # Proxies ConfigParser getters like this:

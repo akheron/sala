@@ -64,10 +64,10 @@ def print_version():
     sys.exit(0)
 
 
-def ensure_files_exist(files):
+def ensure_files_exist(config, files):
     absent = []
     for filename in files:
-        if not os.access(filename, os.R_OK):
+        if not os.access(os.path.join(config.topdir, filename), os.R_OK):
             absent.append(filename)
 
     if len(absent) == 1:
@@ -125,8 +125,8 @@ def generate_passwords(cmd):
         return data.split()
 
 
-def read_master_key():
-    if not os.path.isfile('.salakey'):
+def read_master_key(config):
+    if not os.path.isfile(config.keyfile):
         print >>sys.stderr, "Error: Run `sala init' first"
         return False
 
@@ -134,7 +134,7 @@ def read_master_key():
     if not passphrase:
         return False
 
-    key = gpg_decrypt('.salakey', passphrase)
+    key = gpg_decrypt(config.keyfile, passphrase)
     if not key:
         print >>sys.stderr, ''
         print >>sys.stderr, 'Error: Unable to unlock the encryption key'
@@ -149,7 +149,7 @@ def do_init(config, files, options):
 
     key_length = config.getint('key-length')
 
-    if os.path.exists('.salakey'):
+    if os.path.exists(config.keyfile):
         print >>sys.stderr, 'Error: The master key already exists'
         return 1
 
@@ -173,7 +173,7 @@ enough for your privacy needs.
     data = ''.join(chr(rng.randint(0, 255)) for x in range(key_length))
     key = binascii.hexlify(data)
 
-    gpg_encrypt(config, '.salakey', passphrase, key)
+    gpg_encrypt(config, config.keyfile, passphrase, key)
     print 'done'
 
 
@@ -181,10 +181,10 @@ def do_get(config, files, options):
     if not files:
         print_help()
 
-    if not ensure_files_exist(files):
+    if not ensure_files_exist(config, files):
         return 1
 
-    key = read_master_key()
+    key = read_master_key(config)
     if key is False:
         return 1
 
@@ -210,14 +210,15 @@ def do_get(config, files, options):
         output = normal_output
 
     for filename in files:
-        output(filename, gpg_decrypt(filename, key))
+        secret = gpg_decrypt(os.path.join(config.topdir, filename), key)
+        output(filename, secret)
 
 
 def do_set(config, files, options):
     if not files:
         print_help()
 
-    key = read_master_key()
+    key = read_master_key(config)
     if key is False:
         return 1
 
@@ -250,7 +251,7 @@ def do_set(config, files, options):
                 pass
 
         make_parent_dirs(filename)
-        gpg_encrypt(config, filename, key, secret)
+        gpg_encrypt(config, os.path.join(config.topdir, filename), key, secret)
 
         print ''
 
@@ -263,30 +264,37 @@ actions = {
 
 
 def main():
+    global SALADIR, KEYFILE
+
     parser = optparse.OptionParser(
         usage='%prog action [file...]',
         add_help_option=False
         )
     parser.add_option('-h', '--help', action='store_true')
     parser.add_option('-v', '--version', action='store_true')
+    parser.add_option('-C', '--saladir')
     parser.add_option('-r', '--raw', action='store_true')
 
     options, args = parser.parse_args()
-
     if options.version:
         print_version()
 
     if options.help or not args or len(args) < 1:
         print_help()
 
-    config = Configuration()
+    if options.saladir:
+        topdir = options.saladir
+    else:
+        topdir = os.environ.get('SALADIR', '')
+
+    config = Configuration(topdir)
 
     action = args[0]
     files = args[1:]
 
     if action not in actions:
         files = [action] + files
-        if os.path.exists(files[0]):
+        if os.path.exists(os.path.join(config.topdir, files[0])):
             do = actions['get']
         else:
             do = actions['set']
