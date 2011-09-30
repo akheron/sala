@@ -30,7 +30,7 @@ write_config() {
 
 # Encrypts stdin with GPG
 gpg_encrypt() {
-    local key=$(mktemp)
+    local key=$(mktemp tmp.XXXXXXXXXX)
     printf "%s" "$2" >$key
     printf "%s" "$3" | \
         gpg --no-tty --batch --no-default-keyring --passphrase-fd 9 \
