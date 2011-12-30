@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+from __future__ import print_function
+
 from optparse import OptionParser
 from subprocess import Popen
 import os
@@ -26,12 +28,12 @@ def main():
         return 2
 
     if run_command('which cram >/dev/null') != 0:
-        print >>sys.stderr, 'Error: cram is not installed'
+        print('Error: cram is not installed', file=sys.stderr)
         return 1
 
     if options.coverage:
         if run_command('which coverage >/dev/null') != 0:
-            print >>sys.stderr, 'Error: coverage is not installed'
+            print('Error: coverage is not installed', file=sys.stderr)
             return 1
 
     if options.coverage:

@@ -1,5 +1,9 @@
-import ConfigParser
 import os
+try:
+    import configparser
+except ImportError:
+    # Python 2
+    import ConfigParser as configparser
 
 
 class Configuration(object):
@@ -10,7 +14,7 @@ class Configuration(object):
     }
 
     def __init__(self, topdir):
-        self.parser = ConfigParser.RawConfigParser()
+        self.parser = configparser.RawConfigParser()
 
         self.parser.add_section('sala')
         for k, v in self.DEFAULTS.items():

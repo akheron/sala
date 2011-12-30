@@ -41,7 +41,7 @@ To install from source, invoke::
 
 Requirements:
 
-* Python_ 2.5 or newer. Currently, 3.x is not supported.
+* Python_ 2.6, 2.7, or 3.2 (or newer 3.x).
 * GnuPG_
 
 Suggested packages:

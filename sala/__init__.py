@@ -1,4 +1,4 @@
-from __future__ import with_statement
+from __future__ import unicode_literals, print_function
 
 __version__ = '1.1'
 __license__ = '''\
@@ -19,6 +19,9 @@ import random
 import subprocess
 import sys
 
+# For Python 2 compatibility
+Py2 = sys.version_info[0] == 2
+
 from sala.config import Configuration
 from sala.gpg import gpg_encrypt, gpg_decrypt
 
@@ -26,7 +29,7 @@ if os.environ.get('SALA_TESTS_RUNNING'):
     # getpass() reads from TTY. Override this behavior in tests.
     def _simple_getpass(prompt=None):
         if prompt:
-            print prompt
+            print(prompt)
         return sys.stdin.readline().strip()
     getpass.getpass = _simple_getpass
 
@@ -36,7 +39,7 @@ if os.environ.get('SALA_TESTS_RUNNING'):
 
 
 def print_help():
-    print '''\
+    print('''\
 Usage: sala [options] action [file...]
 
 Store passwords and other sensitive information to plain text files.
@@ -53,14 +56,14 @@ they don't already exist.
 Options:
   -v, --version  Show version number and exit
   -h, --help     Show this help
-  -r, --raw      Use a simple output format for machine processing'''
+  -r, --raw      Use a simple output format for machine processing''')
     sys.exit(2)
 
 
 def print_version():
-    print 'sala version %s' % __version__
-    print ''
-    print __license__
+    print('sala version %s' % __version__)
+    print('')
+    print(__license__)
     sys.exit(0)
 
 
@@ -75,12 +78,12 @@ def ensure_files_exist(config, files):
             fobj.close()
 
     if len(absent) == 1:
-        print >>sys.stderr, 'Error: File does not exist:', absent[0]
+        print('Error: File does not exist: %s' % absent[0], file=sys.stderr)
         return False
 
     elif absent:
-        print >>sys.stderr, 'Error: The following files do not exist:', \
-            ', '.join(absent)
+        print('Error: The following files do not exist: %s' %
+              ', '.join(absent), file=sys.stderr)
         return False
 
     return True
@@ -89,7 +92,7 @@ def ensure_files_exist(config, files):
 def read_passphrase(prompt, confirm=False, options=None):
     passphrase = getpass.getpass(prompt + ': ')
     if not passphrase:
-        print >>sys.stderr, 'Empty passphrase is not allowed'
+        print('Empty passphrase is not allowed', file=sys.stderr)
         return False
 
     if options and passphrase in [str(x) for x in options]:
@@ -98,10 +101,10 @@ def read_passphrase(prompt, confirm=False, options=None):
     if confirm:
         other = getpass.getpass('Confirm: ')
         if other != passphrase:
-            print >>sys.stderr, 'Inputs did not match'
+            print('Inputs did not match', file=sys.stderr)
             return False
 
-    return passphrase
+    return passphrase.encode('utf-8')
 
 
 def make_parent_dirs(filename):
@@ -109,7 +112,7 @@ def make_parent_dirs(filename):
     if dirname:
         try:
             os.makedirs(dirname)
-        except OSError, exc:
+        except OSError as exc:
             if exc.errno != errno.EEXIST:
                 raise
 
@@ -131,7 +134,7 @@ def generate_passwords(cmd):
 
 def read_master_key(config):
     if not os.path.isfile(config.keyfile):
-        print >>sys.stderr, "Error: Run `sala init' first"
+        print("Error: Run `sala init' first", file=sys.stderr)
         return False
 
     passphrase = read_passphrase('Enter the master passphrase')
@@ -140,8 +143,8 @@ def read_master_key(config):
 
     key = gpg_decrypt(config.keyfile, passphrase)
     if not key:
-        print >>sys.stderr, ''
-        print >>sys.stderr, 'Error: Unable to unlock the encryption key'
+        print('', file=sys.stderr)
+        print('Error: Unable to unlock the encryption key', file=sys.stderr)
         return False
 
     return key
@@ -154,31 +157,37 @@ def do_init(config, files, options):
     key_length = config.getint('key-length')
 
     if os.path.exists(config.keyfile):
-        print >>sys.stderr, 'Error: The master key already exists'
+        print('Error: The master key already exists', file=sys.stderr)
         return 1
 
-    print '''\
+    print('''\
 Please pick a master passphrase. It is used to encrypt a very long
 random key, which in turn is used to encrypt all the private data in
 this directory.
 
 Make sure you remember the master passphrase and that it's strong
 enough for your privacy needs.
-'''
+''')
 
     passphrase = read_passphrase('Enter the master passphrase', confirm=True)
     if passphrase is False:
         return 1
 
-    print ''
-    print 'Generating a master key (%d bits)...' % (key_length * 8),
+    print('')
+    print('Generating a master key (%d bits)... ' % (key_length * 8), end='')
 
     rng = random.SystemRandom()
-    data = ''.join(chr(rng.randint(0, 255)) for x in range(key_length))
+    key_bytes = (rng.randint(0, 255) for x in range(key_length))
+    if Py2:
+        # bytes is str in Python 2, there's no cleaner way to build a
+        # bytestring from byte ints.
+        data = b''.join(chr(x) for x in key_bytes)
+    else:
+        data = bytes(key_bytes)
     key = binascii.hexlify(data)
 
     gpg_encrypt(config, config.keyfile, passphrase, key)
-    print 'done'
+    print('done')
 
 
 def do_get(config, files, options):
@@ -195,27 +204,27 @@ def do_get(config, files, options):
     # Human-readable output
     def normal_output(filename, secret):
         if secret:
-            print '%s: %s' % (filename, secret)
+            print('%s: %s' % (filename, secret))
         else:
-            print 'Error: Failed to decrypt %s' % filename
-        print ''
+            print('Error: Failed to decrypt %s' % filename)
+        print('')
 
     # Machine-readable output
     def raw_output(filename, secret):
         if secret:
-            print secret
+            print(secret)
         else:
-            print >>sys.stderr, 'Error: Failed to decrypt %s' % filename
+            print('Error: Failed to decrypt %s' % filename, file=sys.stderr)
 
     if options.raw:
         output = raw_output
     else:
-        print ''
+        print('')
         output = normal_output
 
     for filename in files:
         secret = gpg_decrypt(os.path.join(config.topdir, filename), key)
-        output(filename, secret)
+        output(filename, secret.decode('utf-8'))
 
 
 def do_set(config, files, options):
@@ -226,7 +235,7 @@ def do_set(config, files, options):
     if key is False:
         return 1
 
-    print ''
+    print('')
 
     for filename in files:
         pwlist = generate_passwords(config.get('password-generator'))
@@ -236,9 +245,9 @@ def do_set(config, files, options):
                 'or type a new secret for ' + filename
 
             for i, pw in enumerate(pwlist):
-                print '%d. %s' % (i, pw)
+                print('%d. %s' % (i, pw.decode('utf-8')))
 
-            print ''
+            print('')
         else:
             options = None
             prompt = 'Type a new secret for ' + filename
@@ -257,7 +266,7 @@ def do_set(config, files, options):
         make_parent_dirs(filename)
         gpg_encrypt(config, os.path.join(config.topdir, filename), key, secret)
 
-        print ''
+        print('')
 
 
 actions = {

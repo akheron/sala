@@ -1,18 +1,30 @@
-import contextlib
+from __future__ import unicode_literals, print_function
+
+from contextlib import contextmanager
 import errno
 import os
 import subprocess
 import sys
 import tempfile
 
+
+# For Python 2.6 compatibility
+@contextmanager
+def nested(cm1, cm2):
+    with cm1:
+        with cm2:
+            yield
+
+
 def close_fds(*args):
     for fds in args:
         for fd in fds:
             try:
                 os.close(fd)
-            except OSError, exc:
+            except OSError as exc:
                 if exc.errno != errno.EBADF:
                     raise
+
 
 class GnuPG(object):
     '''GPG command line wrapper in the spirit of GnuPGInterface'''
@@ -27,13 +39,13 @@ class GnuPG(object):
             raise RuntimeError('Already running')
 
         standard_handles = {
-            'stdin': (sys.stdin, 'w'),
-            'stdout': (sys.stdout, 'r'),
-            'stderr': (sys.stderr, 'r'),
+            'stdin': (sys.stdin, 'wb'),
+            'stdout': (sys.stdout, 'rb'),
+            'stderr': (sys.stderr, 'rb'),
         }
 
         gpg_handles = {
-            'passphrase': 'w',
+            'passphrase': 'wb',
         }
 
         self.handles = {}
@@ -58,10 +70,10 @@ class GnuPG(object):
                 raise ValueError('Invalid handle: %s' % name)
 
             pipe_r, pipe_w = os.pipe()
-            if mode == 'w':
+            if mode == 'wb':
                 for_parent = pipe_w
                 for_child = pipe_r
-            elif mode == 'r':
+            elif mode == 'rb':
                 for_parent = pipe_r
                 for_child = pipe_w
             else:
@@ -107,7 +119,8 @@ class GnuPG(object):
             close_fds(self.parent_fds)
 
         cmdline = ['gpg'] + fd_args + self.default_args + self.args + args
-        self.p = subprocess.Popen(cmdline, preexec_fn=preexec, **std_fds)
+        self.p = subprocess.Popen(cmdline, preexec_fn=preexec,
+                                  close_fds=False, **std_fds)
 
         close_fds(child_fds)
 
@@ -121,7 +134,7 @@ def gpg_encrypt(config, filename, passphrase, content):
     stderr = tempfile.TemporaryFile()
     target = open(filename + '.tmp', 'w')
 
-    with contextlib.nested(stderr, target):
+    with nested(stderr, target):
         gnupg = GnuPG([
             '--armor',
             '--cipher-algo', config.get('cipher'),
@@ -142,8 +155,8 @@ def gpg_encrypt(config, filename, passphrase, content):
 
     try:
         gnupg.wait()
-    except IOError, exc:
-        print >>sys.stderr, exc
+    except IOError as exc:
+        print(exc, file=sys.stderr)
         os.remove(filename + '.tmp')
     else:
         os.rename(filename + '.tmp', filename)
@@ -153,7 +166,7 @@ def gpg_decrypt(filename, passphrase):
     stderr = tempfile.TemporaryFile()
     source = open(filename)
 
-    with contextlib.nested(stderr, source):
+    with nested(stderr, source):
         gnupg = GnuPG(['--armor'])
 
         gnupg.run(
@@ -171,6 +184,6 @@ def gpg_decrypt(filename, passphrase):
     try:
         gnupg.wait()
     except IOError:
-        return ''
+        return b''
     else:
         return content
