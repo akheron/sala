@@ -1,5 +1,7 @@
 from __future__ import unicode_literals, print_function
 
+## START OF METADATA ##
+
 __version__ = '1.1'
 __license__ = '''\
 Copyright (C) 2011 Petri Lehtinen <petri@digip.org>
@@ -9,6 +11,8 @@ the terms of the MIT license. See the file LICENSE distributed with
 the source code for details.
 
 The source code is available at http://pypi.python.org/pypi/sala.'''
+
+## END OF METADATA ##
 
 import binascii
 import errno

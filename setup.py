@@ -1,7 +1,20 @@
 from distutils.core import setup
 
+# Read metadata (__version__ etc.) from sala/__init__.py
 context = {}
-execfile('sala/__init__.py', context, context)
+with open('sala/__init__.py') as fobj:
+    lines = []
+    save = False
+    for line in fobj:
+        if not save and line.strip() == '## START OF METADATA ##':
+            save = True
+        elif save and line.strip() == '## END OF METADATA ##':
+            break
+
+        if save:
+            lines.append(line)
+
+    exec(''.join(lines), context)
 
 setup(
     name='sala',
