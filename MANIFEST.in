@@ -1,2 +1,5 @@
-include README.rst LICENSE CHANGES
+include README.rst LICENSE CHANGES run-tests.py
 graft doc
+exclude doc/sala.1 doc/sala.1.html
+graft test
+global-exclude .gitignore
