@@ -2,7 +2,7 @@ from __future__ import unicode_literals, print_function
 
 ## START OF METADATA ##
 
-__version__ = '1.1'
+__version__ = '1.2'
 __license__ = '''\
 Copyright (C) 2011 Petri Lehtinen <petri@digip.org>
 
