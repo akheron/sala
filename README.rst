@@ -71,7 +71,7 @@ documentation source to a regular manpage and a HTML manpage, invoke
 
     make -C doc
 
-in the top directory. Docutils_ 0.7 or newer is required.
+in the top directory. Docutils_ 0.8 or newer is required.
 
 .. _cram: http://bitbucket.com/brodie/cram
 .. _coverage: http://nedbatchelder.com/code/coverage/

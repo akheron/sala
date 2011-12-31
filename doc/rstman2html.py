@@ -21,7 +21,7 @@ class Translator(html4css1.HTMLTranslator):
     # HTML5
     xml_declaration = '<!-- %s -->'
     doctype = '<!DOCTYPE html>\n'
-    head_prefix_template = '<html lang="%s"><!-- %s -->\n<head>\n'
+    head_prefix_template = '<html lang="%(lang)s">\n<head>\n'
     content_type = '<meta charset="%s">\n'
     stylesheet_link = '<link rel="stylesheet" href="%s" type="text/css">\n'
 
