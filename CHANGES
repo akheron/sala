@@ -1,14 +1,36 @@
 Release history
 ===============
 
+Version 1.2
+-----------
+
+Released on 201X-XX-XX
+
+* Add -r option for raw output format.
+
+* Allow setting the store location with SLADIR environment variable
+  and -C command line option.
+
+* Add support for Python 3.2, drop support for Python 2.5.
+
+* Drop the GnuPGInterface dependency. Sala now implements its own
+  GnuPG wrapper.
+
+* Add man page (in ReST format), move most of README there.
+
+* Improve portability.
+
+* Add a regression test suite (cram is required to run the tests).
+
+
 Version 1.1
 -----------
 
-Released 2011-02-02
+Released on 2011-02-02
 
-* Add support for Python 2.5
+* Add support for Python 2.5.
 
-* Read configuration from ``$XDG_CONFIG_HOME/sala.conf``, too
+* Read configuration from ``$XDG_CONFIG_HOME/sala.conf``, too.
 
 
 Version 1.0.1
