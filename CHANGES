@@ -8,7 +8,7 @@ Released on 2011-12-31
 
 * Add -r option for raw output format.
 
-* Allow setting the store location with SLADIR environment variable
+* Allow setting the store location with SALADIR environment variable
   and -C command line option.
 
 * Add support for Python 3.2, drop support for Python 2.5.
