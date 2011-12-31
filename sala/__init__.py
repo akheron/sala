@@ -203,18 +203,12 @@ def do_get(config, files, options):
 
     # Human-readable output
     def normal_output(filename, secret):
-        if secret:
-            print('%s: %s' % (filename, secret))
-        else:
-            print('Error: Failed to decrypt %s' % filename)
+        print('%s: %s' % (filename, secret))
         print('')
 
     # Machine-readable output
     def raw_output(filename, secret):
-        if secret:
-            print(secret)
-        else:
-            print('Error: Failed to decrypt %s' % filename, file=sys.stderr)
+        print(secret)
 
     if options.raw:
         output = raw_output
@@ -224,7 +218,10 @@ def do_get(config, files, options):
 
     for filename in files:
         secret = gpg_decrypt(os.path.join(config.topdir, filename), key)
-        output(filename, secret.decode('utf-8'))
+        if not secret:
+            print('Error: Failed to decrypt %s\n' % filename, file=sys.stderr)
+        else:
+            output(filename, secret.decode('utf-8'))
 
 
 def do_set(config, files, options):
