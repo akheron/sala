@@ -7,8 +7,8 @@ encrypted plaintext password store
 ----------------------------------
 
 :Author: Petri Lehtinen <petri@digip.org>
-:Copyright: Copyright (C) 2011 Petri Lehtinen. Licensed under the MIT
-    license.
+:Copyright: Copyright (C) 2011, 2012 Petri Lehtinen. Licensed under
+    the MIT license.
 :Manual section: 1
 :Manual group: User Commands
 

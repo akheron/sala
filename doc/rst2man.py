@@ -1,6 +1,12 @@
 #!/usr/bin/env python
 #
-# Copyright (C) 2011 Petri Lehtinen
+# Copyright (C) 2011, 2012 Petri Lehtinen <petri@digip.org>
+#
+# sala is free software; you can redistribute it and/or modify it under
+# the terms of the MIT license. See the file LICENSE distributed with
+# the source code for details.
+#
+# The source code is available at https://github.com/akheron/sala.
 
 '''rst2man.py from docutils, tweaked for nicer output'''
 

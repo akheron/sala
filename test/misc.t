@@ -27,10 +27,10 @@ Version:
   $ sala -v
   sala version 1.2
   
-  Copyright (C) 2011 Petri Lehtinen <petri@digip.org>
+  Copyright (C) 2011, 2012 Petri Lehtinen <petri@digip.org>
   
   sala is free software; you can redistribute it and/or modify it under
   the terms of the MIT license. See the file LICENSE distributed with
   the source code for details.
   
-  The source code is available at http://pypi.python.org/pypi/sala.
+  The source code is available at https://github.com/akheron/sala.
