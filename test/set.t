@@ -112,6 +112,31 @@ Set a secret, using SALADIR:
 
   $ cleanup
 
+Set a secret in a subdirectory, using SALADIR:
+
+  $ mkdir store
+  $ (cd store && init_password_store testpassword)
+  $ SALADIR=store sala set bar/foo <<EOF
+  > testpassword
+  > secret
+  > secret
+  > EOF
+  Enter the master passphrase: 
+  
+  Type a new secret for bar/foo: 
+  Confirm: 
+  
+  $ (cd store && decrypt_secret bar/foo testpassword)
+  secret (no-eol)
+
+  $ test -f bar
+  [1]
+
+  $ test -f bar/foo
+  [1]
+
+  $ cleanup
+
 Set a secret, using -C:
 
   $ mkdir store
