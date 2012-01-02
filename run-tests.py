@@ -41,6 +41,10 @@ def main():
         os.environ['COVERAGE'] = 'yes'
         os.environ['COVERAGE_FILE'] = os.path.abspath('.coverage')
 
+    if 'SALADIR' in os.environ:
+        # Remove SALADIR from environ to avoid failing tests
+        del os.environ['SALADIR']
+
     run_command('cram test')
 
     if options.coverage:

@@ -264,8 +264,13 @@ def do_set(config, files, options):
             except (ValueError, IndexError):
                 pass
 
-        make_parent_dirs(filename)
-        gpg_encrypt(config, os.path.join(config.topdir, filename), key, secret)
+        if os.path.isabs(filename):
+            full_file_path = filename
+        else:
+            full_file_path = os.path.join(config.topdir, filename)
+
+        make_parent_dirs(full_file_path)
+        gpg_encrypt(config, full_file_path, key, secret)
 
         print('')
 
