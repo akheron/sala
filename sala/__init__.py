@@ -283,8 +283,6 @@ actions = {
 
 
 def main():
-    global SALADIR, KEYFILE
-
     parser = optparse.OptionParser(
         usage='%prog action [file...]',
         add_help_option=False
