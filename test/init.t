@@ -43,6 +43,21 @@ Initialize a password store:
   $ cat .sala/key | head -n 1
   -----BEGIN PGP MESSAGE-----
 
+  $ test -d .sala/hooks
+
+  $ test -f .sala/hooks/post-set.sample
+
+  $ cat .sala/hooks/post-set.sample
+  #!/bin/sh
+  
+  # This is a sample post-set hook for sala that commits your changes
+  # to git. To activate, remove .sample and make the file executable.
+  
+  # post-set receives the filename as a parameter.
+  
+  # git add $1 && git commit -m "Save $1."
+
+
 Initialize with an empty password:
 
   $ cleanup

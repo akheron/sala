@@ -28,6 +28,7 @@ Py2 = sys.version_info[0] == 2
 
 from sala.config import Configuration
 from sala.gpg import gpg_encrypt, gpg_decrypt
+from sala.hooks import init_hooks, run_hooks
 
 if os.environ.get('SALA_TESTS_RUNNING'):
     # getpass() reads from TTY. Override this behavior in tests.
@@ -194,6 +195,10 @@ enough for your privacy needs.
         os.mkdir(config.saladir)
 
     gpg_encrypt(config, config.keyfile, passphrase, key)
+
+    if not os.path.exists(config.hooksdir):
+        os.mkdir(config.hooksdir)
+        init_hooks(config.hooksdir)
     print('done')
 
 
@@ -242,6 +247,7 @@ def do_set(config, files, options):
     print('')
 
     for filename in files:
+        run_hooks('pre', 'set', config, filename)
         pwlist = generate_passwords(config.get('password-generator'))
         if pwlist:
             options = range(len(pwlist))
@@ -274,6 +280,8 @@ def do_set(config, files, options):
 
         make_parent_dirs(full_file_path)
         gpg_encrypt(config, full_file_path, key, secret)
+
+        run_hooks('post', 'set', config, filename)
 
         print('')
 

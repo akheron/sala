@@ -35,6 +35,7 @@ class Configuration(object):
         self.topdir = topdir
         self.saladir = os.path.join(topdir, '.sala')
         self.keyfile = os.path.join(self.saladir, 'key')
+        self.hooksdir = os.path.join(self.saladir, 'hooks')
 
     def __getattr__(self, key):
         # Proxies ConfigParser getters like this:
