@@ -190,6 +190,9 @@ enough for your privacy needs.
         data = bytes(key_bytes)
     key = binascii.hexlify(data)
 
+    if not os.path.exists(config.saladir):
+        os.mkdir(config.saladir)
+
     gpg_encrypt(config, config.keyfile, passphrase, key)
     print('done')
 

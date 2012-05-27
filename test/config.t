@@ -11,7 +11,7 @@ Change cipher to BLOWFISH:
   > testpassword
   > EOF
 
-  $ gpg_decrypt .salakey testpassword 2>&1 | head -n 1
+  $ gpg_decrypt .sala/key testpassword 2>&1 | head -n 1
   gpg: BLOWFISH encrypted data
 
   $ cleanup
@@ -29,7 +29,7 @@ Change key length:
 
 3 bytes -> 6 hexadecimal characters:
 
-  $ gpg_decrypt .salakey testpassword 2>/dev/null; echo
+  $ gpg_decrypt .sala/key testpassword 2>/dev/null; echo
   [0-9a-f]{6} (re)
 
   $ cleanup
@@ -71,7 +71,7 @@ environment variables:
   > EOF
 
   $ cd store
-  $ write_config sala.conf <<EOF
+  $ write_config .sala/config <<EOF
   > cipher BLOWFISH
   > EOF
 
@@ -82,31 +82,31 @@ Initialize with all config files in place. The one inside the store
   > testpassword
   > testpassword
   > EOF
-  $ gpg_decrypt .salakey testpassword 2>&1 | head -n 2 | tail -n 1
+  $ gpg_decrypt .sala/key testpassword 2>&1 | head -n 2 | tail -n 1
   gpg: BLOWFISH encrypted data
 
 Remove the config from store, and initialize again. This time
 $XDG_CONFIG_HOME/sala.conf (with 3DES cipher) should take precedence.
 
-  $ rm sala.conf
-  $ rm .salakey
+  $ rm .sala/config
+  $ rm .sala/key
   $ sala init >/dev/null 2>&1 <<EOF
   > testpassword
   > testpassword
   > EOF
-  $ gpg_decrypt .salakey testpassword 2>&1 | head -n 1
+  $ gpg_decrypt .sala/key testpassword 2>&1 | head -n 1
   gpg: 3DES encrypted data
 
 Remove $XDG_CONFIG_HOME/sala.conf and initialize once more. Now,
 $HOME/.sala.conf (with CAST5 cipher) should be active.
 
   $ rm $XDG_CONFIG_HOME/sala.conf
-  $ rm .salakey
+  $ rm .sala/key
   $ sala init >/dev/null 2>&1 <<EOF
   > testpassword
   > testpassword
   > EOF
-  $ gpg_decrypt .salakey testpassword 2>&1 | head -n 1
+  $ gpg_decrypt .sala/key testpassword 2>&1 | head -n 1
   gpg: CAST5 encrypted data
 
   $ cleanup
@@ -114,15 +114,15 @@ $HOME/.sala.conf (with CAST5 cipher) should be active.
 Initialize with a config file using SALADIR:
 
   $ mkdir store workdir
-  $ write_config store/sala.conf <<EOF
+  $ write_config store/.sala/config <<EOF
   > cipher BLOWFISH
   > EOF
   $ (cd workdir && SALADIR=../store sala init >/dev/null 2>&1) <<EOF
   > testpassword
   > testpassword
   > EOF
-  $ gpg_decrypt store/.salakey testpassword 2>&1 | head -n 1
+  $ gpg_decrypt store/.sala/key testpassword 2>&1 | head -n 1
   gpg: BLOWFISH encrypted data
 
-  $ test -f workdir/.salakey
+  $ test -f workdir/.sala/key
   [1]

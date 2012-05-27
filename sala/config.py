@@ -27,13 +27,14 @@ class Configuration(object):
         config_files = [
             os.path.expanduser('~/.sala.conf'),
             os.path.join(xdg_config_home, 'sala.conf'),
-            os.path.join(topdir, 'sala.conf'),
+            os.path.join(topdir, '.sala/config'),
         ]
 
         self.parser.read(config_files)
 
         self.topdir = topdir
-        self.keyfile = os.path.join(topdir, '.salakey')
+        self.saladir = os.path.join(topdir, '.sala')
+        self.keyfile = os.path.join(self.saladir, 'key')
 
     def __getattr__(self, key):
         # Proxies ConfigParser getters like this:
