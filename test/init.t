@@ -40,8 +40,23 @@ Initialize a password store:
   
   Generating a master key (512 bits)... done
 
-  $ cat .salakey | head -n 1
+  $ cat .sala/key | head -n 1
   -----BEGIN PGP MESSAGE-----
+
+  $ test -d .sala/hooks
+
+  $ test -f .sala/hooks/post-set.sample
+
+  $ cat .sala/hooks/post-set.sample
+  #!/bin/sh
+  
+  # This is a sample post-set hook for sala that commits your changes
+  # to git. To activate, remove .sample and make the file executable.
+  
+  # post-set receives the filename as a parameter.
+  
+  # git add $1 && git commit -m "Save $1."
+
 
 Initialize with an empty password:
 
@@ -101,10 +116,10 @@ Initialize a store using SALADIR:
   > testpassword
   > EOF
 
-  $ cat store/.salakey | head -n 1
+  $ cat store/.sala/key | head -n 1
   -----BEGIN PGP MESSAGE-----
 
-  $ test -f .salakey
+  $ test -f .sala/key
   [1]
 
   $ cleanup
@@ -117,8 +132,8 @@ Initialize a store using -C:
   > testpassword
   > EOF
 
-  $ cat store/.salakey | head -n 1
+  $ cat store/.sala/key | head -n 1
   -----BEGIN PGP MESSAGE-----
 
-  $ test -f .salakey
+  $ test -f .sala/key
   [1]
