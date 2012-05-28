@@ -125,7 +125,7 @@ tries to read its configuration files in this order:
 * ``~/.config/sala.conf`` (more specifically
   ``$XDG_CONFIG_HOME/sala.conf``)
 
-* ``sala.conf`` in the top directory of the password store
+* ``.sala/config`` in the top directory of the password store
 
 None of the files are required. If a configuration setting is
 specified in more than one file, the latter file (in the list above)
@@ -169,7 +169,7 @@ Sala uses GnuPG's symmetric encryption. All encrypted files are in the
 GnuPG plain text (armor) format.
 
 When the password store is initialized, a very long, truly random key
-is generated and stored to the file ``.salakey``. Only this "master
+is generated and stored to the file ``.sala/key``. Only this "master
 key" is encrypted with your master passphrase. All the other files in
 the store are encrypted with the master key.
 
