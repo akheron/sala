@@ -21,7 +21,8 @@ cleanup() {
 # Writes sala configuration
 write_config() {
     local file=$1
-    : ${file:=sala.conf}
+    : ${file:=.sala/config}
+    test -d `dirname $file` || mkdir `dirname $file`
     echo "[sala]" > $file
     while read key value; do
         echo "${key} = ${value}" >> $file
@@ -48,7 +49,7 @@ gpg_decrypt() {
 # Encrypts a file like sala does. First, decrypts the master key and
 # then encrypts the given file with the master key.
 encrypt_secret() {
-    local key=$(gpg_decrypt .salakey "$2" 2>/dev/null)
+    local key=$(gpg_decrypt .sala/key "$2" 2>/dev/null)
     gpg_encrypt "$1" "$key" "$3"
 }
 
@@ -56,7 +57,7 @@ encrypt_secret() {
 # Decrypts a file written by sala. First, decrypts the master key and
 # then decrypts the given file with the master key.
 decrypt_secret() {
-    local key=$(gpg_decrypt .salakey "$2" 2>/dev/null)
+    local key=$(gpg_decrypt .sala/key "$2" 2>/dev/null)
     gpg_decrypt "$1" "$key" 2>/dev/null
 }
 
