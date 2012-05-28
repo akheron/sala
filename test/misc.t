@@ -34,3 +34,32 @@ Version:
   the source code for details.
   
   The source code is available at https://github.com/akheron/sala.
+
+Backwards compatibility: Check that .salakey is renamed to .sala/key:
+
+  $ echo "foobar" > .salakey
+  $ sala get a  # This triggers the moving, even though if fails
+  Note: Creating directory .sala
+  Note: Moving .salakey to .sala/key
+  Error: File does not exist: a
+  [1]
+  $ ! test -e .salakey
+  $ test -d .sala
+  $ test "$(cat .sala/key)" = "foobar"
+
+  $ cleanup
+
+Backwards compatibility: Check that sala.conf is renamed to .sala/config:
+
+  $ init_password_store testpassword
+  $ rm -f .sala/config
+  $ echo "[sala]" > sala.conf
+  $ sala get a  # This triggers the moving, even though if fails
+  Note: Moving sala.conf to .sala/config
+  Error: File does not exist: a
+  [1]
+  $ ! test -e sala.conf
+  $ test -d .sala
+  $ test "$(cat .sala/config)" = "[sala]"
+
+  $ cleanup

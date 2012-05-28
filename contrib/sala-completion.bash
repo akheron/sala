@@ -18,7 +18,7 @@ _sala() {
     fi
 
     # Not initialized, bail out
-    [ ! -f "$dir/.sala" ] && return
+    [ -f "$dir/.sala" -o -f "$dir/.salakey" ] || return
 
     # Skip dotfiles, e.g. .salakey
     local names=$(cd $dir && compgen -f -- "$cur" | grep -v '^\.')
