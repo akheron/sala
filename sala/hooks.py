@@ -5,18 +5,16 @@ import stat
 import subprocess
 
 _DEFAULT_HOOKS = {
-    'post-set': '''#!/bin/sh
+    'post-set': '''\
+#!/bin/sh
+#
+# An example post-set hook that commits your changes to git.
+# To enable this hook, rename this file to "post-set".
+#
+# Receives the filename as the first argument.
 
-# This is a sample post-set hook for sala that commits your changes
-# to git. To activate, remove .sample and make the file executable.
-
-# post-set receives the filename as a parameter.
-
-# git add $1 && git commit -m "Save $1."
+git commit -m "Save $1." $1
 ''',
-    'pre-set': '''#!/bin/sh
-# Here you can include a pre-save hook
-    '''
 }
 
 

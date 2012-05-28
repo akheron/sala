@@ -49,13 +49,13 @@ Initialize a password store:
 
   $ cat .sala/hooks/post-set.sample
   #!/bin/sh
+  #
+  # An example post-set hook that commits your changes to git.
+  # To enable this hook, rename this file to "post-set".
+  #
+  # Receives the filename as the first argument.
   
-  # This is a sample post-set hook for sala that commits your changes
-  # to git. To activate, remove .sample and make the file executable.
-  
-  # post-set receives the filename as a parameter.
-  
-  # git add $1 && git commit -m "Save $1."
+  git commit -m "Save $1." $1
 
 
 Initialize with an empty password:
