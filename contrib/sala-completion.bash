@@ -17,10 +17,10 @@ _sala() {
         _get_comp_words_by_ref cur
     fi
 
-    # Not initialized, bail out
-    [ -f "$dir/.sala" -o -f "$dir/.salakey" ] || return
+    # Check that we really have a sala repo
+    [ -d "$dir/.sala" -o -f "$dir/.salakey" ] || return
 
-    # Skip dotfiles, e.g. .salakey
+    # Skip dotfiles, e.g. .sala/
     local names=$(cd $dir && compgen -f -- "$cur" | grep -v '^\.')
 
     COMPREPLY=($(for name in $names; do
