@@ -1,6 +1,22 @@
 Release history
 ===============
 
+Version 1.3
+-----------
+
+Released on XXXX-XX-XX
+
+* Respect SALADIR when creating subdirectories with 'set'.
+
+* Add a bash completion script: contrib/sala-completion.bash.
+
+* Move the repository state to the .sala subdirectory. .salakey
+  becomes .sala/key and sala.conf becomes .sala/config.
+
+* Add support for hooks in .sala/hooks. Initially, the post-set hook
+  is supported.
+
+
 Version 1.2
 -----------
 
