@@ -65,14 +65,14 @@ script to run the test suite. For more info, invoke::
 cram_ 0.5 or newer is required to run the tests. If coverage_ is
 installed, the script can also show test coverage.
 
-There documentation in the ``doc/`` directory. To build the
-documentation source to a regular manpage and a HTML manpage, invoke
+The documentation is in the ``doc/`` directory. To build a manpage
+and a HTML documentation page, invoke
 ::
 
     make -C doc
 
 in the top directory. Docutils_ 0.8 or newer is required.
 
-.. _cram: http://bitbucket.com/brodie/cram
+.. _cram: https://bitbucket.org/brodie/cram
 .. _coverage: http://nedbatchelder.com/code/coverage/
 .. _Docutils: http://docutils.sf.net/
