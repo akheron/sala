@@ -65,9 +65,9 @@ class Configuration(object):
 
         if os.path.exists(old) and not os.path.exists(new):
             if not os.path.exists(self.saladir):
-                print('Note: Creating directory %s' % self.saladir,
+                print('NOTE: Creating directory %s' % self.saladir,
                       file=sys.stderr)
                 os.mkdir(self.saladir)
 
-            print('Note: Moving %s to %s' % (old, new))
+            print('NOTE: Moving %s to %s' % (old, new))
             shutil.move(old, new)
