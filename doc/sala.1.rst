@@ -157,7 +157,7 @@ exists before you run ``sala init``.
 The ``password-generator`` command is run through the shell to
 generate password suggestions. If the command fails (is not found or
 exits with non-zero exit status), its output is ignored. Othewise, the
-output should consist of one or more words separated with whitespace
+output should consist of one or more words separated by whitespace
 (space, tab, newline, etc.). These words are presented to the user as
 password suggestions by ``sala set``.
 
@@ -206,5 +206,5 @@ ENVIRONMENT
 FILES
 =====
 
-``~/.sala.conf``, ``$XDG_CONFIG_HOME/sala.conf``, ``sala.conf``
+``~/.sala.conf``, ``$XDG_CONFIG_HOME/sala.conf``, ``.sala/config``
     Configuration files, See CONFIGURATION_ above.
