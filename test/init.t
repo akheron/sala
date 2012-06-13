@@ -55,7 +55,7 @@ Initialize a password store:
   #
   # Receives the filename as the first argument.
   
-  git commit -m "Save $1." $1
+  git add $1 && git commit -m "Save $1."
 
 
 Initialize with an empty password:

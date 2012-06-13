@@ -39,8 +39,8 @@ Backwards compatibility: Check that .salakey is renamed to .sala/key:
 
   $ echo "foobar" > .salakey
   $ sala get a  # This triggers the moving, even though if fails
-  Note: Creating directory .sala
-  Note: Moving .salakey to .sala/key
+  NOTE: Creating directory .sala
+  NOTE: Moving .salakey to .sala/key
   Error: File does not exist: a
   [1]
   $ ! test -e .salakey
@@ -55,7 +55,7 @@ Backwards compatibility: Check that sala.conf is renamed to .sala/config:
   $ rm -f .sala/config
   $ echo "[sala]" > sala.conf
   $ sala get a  # This triggers the moving, even though if fails
-  Note: Moving sala.conf to .sala/config
+  NOTE: Moving sala.conf to .sala/config
   Error: File does not exist: a
   [1]
   $ ! test -e sala.conf
