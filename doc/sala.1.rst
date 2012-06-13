@@ -162,6 +162,27 @@ output should consist of one or more words separated with whitespace
 password suggestions by ``sala set``.
 
 
+BASH COMPLETION
+===============
+
+A bash completion script is available in
+``contrib/sala-completion.bash``. When enabled, it provides tab
+completion for files and directories in ``$SALADIR``, or in the
+current directory if ``SALADIR`` has not been defined. Setting
+``SALADIR`` allows you to use sala with tab completion regardless of
+the current working directory of your shell.
+
+To enable bash completion, load the completion script::
+
+    $ export SALADIR=/path/to/passwords
+    $ . /path/to/sala/contrib/bash-completion.sala
+
+If you want to later disable the completion in the same shell session,
+invoke::
+
+    $ complete -o default sala
+
+
 UNDER THE HOOD
 ==============
 
