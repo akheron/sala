@@ -25,7 +25,7 @@ Help:
 Version:
 
   $ sala -v
-  sala version 1.2
+  sala version 1.3
   
   Copyright (C) 2011, 2012 Petri Lehtinen <petri@digip.org>
   
