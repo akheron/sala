@@ -1,6 +1,14 @@
 sala - encrypted plaintext password store
 *****************************************
 
+.. image:: https://pypip.in/v/sala/badge.png
+  :alt: PyPI version
+  :target: http://pypi.python.org/pypi/sala
+
+.. image:: https://pypip.in/d/sala/badge.png
+  :alt: PyPI downloads
+  :target: http://pypi.python.org/pypi/sala
+
 Sala lets you store passwords and other bits of sensitive plain-text
 information to encrypted files on a directory hierarchy. The
 information is protected by GnuPG's symmetrical encryption.
