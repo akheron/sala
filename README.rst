@@ -1,12 +1,12 @@
 sala - encrypted plaintext password store
 *****************************************
 
-.. image:: https://pypip.in/v/sala/badge.png
+.. image:: https://img.shields.io/pypi/v/sala.svg
   :alt: PyPI version
   :target: http://pypi.python.org/pypi/sala
 
-.. image:: https://pypip.in/d/sala/badge.png
-  :alt: PyPI downloads
+.. image:: https://img.shields.io/pypi/pyversions/sala.svg
+  :alt: Python versions
   :target: http://pypi.python.org/pypi/sala
 
 Sala lets you store passwords and other bits of sensitive plain-text
