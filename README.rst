@@ -39,11 +39,11 @@ For more information, see sala(1) and http://www.digip.org/sala/.
 Installation
 ============
 
-Install sala by invoking::
+Install sala::
 
     pip install sala
 
-To install from source, invoke::
+Install from source::
 
     python setup.py install
 
@@ -66,7 +66,7 @@ Development
 ===========
 
 The test suite is in the ``test/`` directory. Use the ``run-tests.py``
-script to run the test suite. For more info, invoke::
+script to run the test suite. For more info, run::
 
     python run-tests.py --help
 
@@ -74,7 +74,7 @@ cram_ 0.5 or newer is required to run the tests. If coverage_ is
 installed, the script can also show test coverage.
 
 The documentation is in the ``doc/`` directory. To build a manpage
-and a HTML documentation page, invoke
+and a HTML documentation page, run
 ::
 
     make -C doc
