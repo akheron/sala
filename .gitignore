@@ -5,3 +5,6 @@
 *.pyo
 .noseids
 .coverage
+
+/target
+**/*.rs.bk

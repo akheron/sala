@@ -1,0 +1,17 @@
+[package]
+name = "sala"
+version = "1.4.0"
+authors = ["Petri Lehtinen <petri@digip.org>"]
+edition = "2018"
+
+[dependencies]
+atty = "0.2"
+nix = "0.13"
+rpassword = "2.1"
+structopt = "0.2"
+
+[dev-dependencies]
+assert_cmd = "0.11"
+copy_dir = "0.1"
+predicates = "1"
+tempfile = "3"
