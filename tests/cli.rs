@@ -1,7 +1,7 @@
 use assert_cmd::prelude::*;
 use copy_dir::copy_dir;
 use predicates::prelude::*;
-use predicates::str::{contains, similar};
+use predicates::str::similar;
 use std::error::Error;
 use std::fs;
 use std::io;
@@ -25,9 +25,9 @@ impl TempRepo {
     }
 }
 
+const DIRECTORY: &str = "foo";
 const EXISTING_SECRET: &str = "foo/@bar";
 const NON_EXISTING_SECRET: &str = "foo/@new";
-const EXISTING_DIRECTORY: &str = "foo";
 
 #[test]
 fn test_no_args() -> Result<(), Box<Error>> {
@@ -36,7 +36,7 @@ fn test_no_args() -> Result<(), Box<Error>> {
         .current_dir(&dir)
         .assert()
         .failure()
-        .stderr(contains("USAGE"));
+        .stderr(similar("Try `sala --help'\n"));
 
     Ok(())
 }
@@ -51,7 +51,7 @@ fn test_get_no_repo() -> Result<(), Box<Error>> {
         .args(&["get", "foo"])
         .assert()
         .failure()
-        .stderr(similar("Run `sala init' first").trim());
+        .stderr(similar("Run `sala init' first\n"));
 
     Ok(())
 }
@@ -87,9 +87,27 @@ fn test_get_not_found() -> Result<(), Box<Error>> {
         .failure()
         .stderr(similar(format!(
             "\
-Error: File does not exist: {}
+Error: File does not exist or invalid: {}
 ",
             NON_EXISTING_SECRET
+        )));
+
+    Ok(())
+}
+
+#[test]
+fn test_get_directory() -> Result<(), Box<Error>> {
+    let repo = TempRepo::new()?;
+    Command::cargo_bin("sala")?
+        .current_dir(repo.path())
+        .args(&["get", DIRECTORY])
+        .assert()
+        .failure()
+        .stderr(similar(format!(
+            "\
+Error: File does not exist or invalid: {}
+",
+            DIRECTORY
         )));
 
     Ok(())
@@ -114,5 +132,121 @@ foo/@bar: baz
 ",
         ));
 
+    Ok(())
+}
+
+#[test]
+fn test_set_no_repo() -> Result<(), Box<Error>> {
+    let dir = tempdir()?;
+
+    Command::cargo_bin("sala")?
+        .current_dir(&dir)
+        .args(&["set", "foobar"])
+        .assert()
+        .failure()
+        .stderr(similar("Run `sala init' first").trim());
+
+    Ok(())
+}
+
+#[test]
+fn test_set_wrong_passphrase() -> Result<(), Box<Error>> {
+    let repo = TempRepo::new()?;
+    Command::cargo_bin("sala")?
+        .current_dir(repo.path())
+        .args(&["set", NON_EXISTING_SECRET])
+        .with_stdin()
+        .buffer("this is wrong\n")
+        .output()?
+        .assert()
+        .failure()
+        .stderr(similar(
+            "\
+Enter the master passphrase: 
+Error: Unable to unlock the encryption key
+",
+        ));
+
+    Ok(())
+}
+
+#[test]
+fn test_set_target_is_directory() -> Result<(), Box<Error>> {
+    let repo = TempRepo::new()?;
+    Command::cargo_bin("sala")?
+        .current_dir(repo.path())
+        .args(&["set", DIRECTORY])
+        .assert()
+        .failure()
+        .stderr(similar(
+            "\
+Error: Target is a directory: foo
+",
+        ));
+
+    Ok(())
+}
+
+#[test]
+fn test_set_secrets_dont_match() -> Result<(), Box<Error>> {
+    let repo = TempRepo::new()?;
+    Command::cargo_bin("sala")?
+        .current_dir(repo.path())
+        .args(&["set", NON_EXISTING_SECRET])
+        .with_stdin()
+        .buffer("qwerty\nfoo\nother\n")
+        .output()?
+        .assert()
+        .failure()
+        .stderr(similar(
+            "\
+Enter the master passphrase: Type a new secret for foo/@new: Confirm: 
+Inputs did not match.
+",
+        ));
+
+    assert_eq!(repo.path().join(NON_EXISTING_SECRET).exists(), false);
+    Ok(())
+}
+
+#[test]
+fn test_set_new_success() -> Result<(), Box<Error>> {
+    let repo = TempRepo::new()?;
+    Command::cargo_bin("sala")?
+        .current_dir(repo.path())
+        .args(&["set", NON_EXISTING_SECRET])
+        .with_stdin()
+        .buffer("qwerty\nfoo\nfoo\n")
+        .output()?
+        .assert()
+        .success()
+        .stderr(similar(
+            "Enter the master passphrase: Type a new secret for foo/@new: Confirm: ",
+        ));
+
+    let secret_path = repo.path().join(NON_EXISTING_SECRET);
+    assert_eq!(secret_path.is_file(), true);
+    assert_eq!(secret_path.metadata()?.len() > 0, true);
+    Ok(())
+}
+
+#[test]
+fn test_set_replace_existing_success() -> Result<(), Box<Error>> {
+    let repo = TempRepo::new()?;
+    Command::cargo_bin("sala")?
+        .current_dir(repo.path())
+        .args(&["set", EXISTING_SECRET])
+        .with_stdin()
+        .buffer("qwerty\nquux\nquux\n")
+        .output()?
+        .assert()
+        .success()
+        .stderr(similar(
+            "Enter the master passphrase: Type a new secret for foo/@bar: Confirm: ",
+        ));
+
+    let secret_path = repo.path().join(EXISTING_SECRET);
+    assert_eq!(secret_path.is_file(), true);
+    assert_eq!(secret_path.metadata()?.len() > 0, true);
     Ok(())
 }
