@@ -1,20 +1,33 @@
 use clap::{App, Arg, ArgMatches, SubCommand};
+use rand::{rngs::OsRng, RngCore};
 use rpassword;
 use sala;
+use std::fs;
 use std::path::{Path, PathBuf};
 use std::process;
 use std::str;
 
 enum SalaResult {
     AllesGut,
+    CannotInitRepo,
     FileDoesNotExist(PathBuf),
-    InputsDontMatch,
+    InputsDidntMatch,
     NoRepo,
+    AlreadyInitialized,
     Get(PathBuf, Vec<u8>),
     TargetIsDirectory(PathBuf),
     UnlockFailed,
     Usage,
 }
+
+const INIT_MESSAGE: &str = "\
+Please pick a master passphrase. It is used to encrypt a very long
+random key, which in turn is used to encrypt all the private data in
+this directory.
+
+Make sure you remember the master passphrase and that it's strong
+enough for your privacy needs.
+";
 
 fn read_password(prompt: &str) -> String {
     let result = if atty::is(atty::Stream::Stdin) {
@@ -36,7 +49,7 @@ fn read_secret(prompt1: &str, prompt2: &str) -> Result<String, SalaResult> {
     if input1 == input2 {
         Ok(input1)
     } else {
-        Err(SalaResult::InputsDontMatch)
+        Err(SalaResult::InputsDidntMatch)
     }
 }
 
@@ -89,7 +102,42 @@ fn run_subcommand(sub: (&str, Option<&ArgMatches>)) -> SalaResult {
 
     match sub {
         ("init", Some(_)) => {
-            println!("init");
+            let key_path = Path::new(".sala/key");
+            if key_path.exists() {
+                return AlreadyInitialized;
+            }
+
+            let sala_path = Path::new(".sala");
+            if !sala_path.exists() {
+                match fs::create_dir(&sala_path) {
+                    Ok(_) => {}
+                    Err(_) => {
+                        return CannotInitRepo;
+                    }
+                }
+            } else {
+                return AlreadyInitialized;
+            }
+            println!("{}", INIT_MESSAGE);
+
+            let master_passphrase = match read_secret("Enter a master passphrase: ", "Confirm: ") {
+                Err(err) => return err,
+                Ok(key) => key,
+            };
+
+            println!("");
+            print!("Generating a master key (512 bits)...");
+            let mut rng = OsRng::new().unwrap();
+            let mut key: [u8; 32] = [0; 32];
+            rng.fill_bytes(&mut key);
+            let key_ascii: String = key
+                .iter()
+                .map(|&b| format!("{:x}", b))
+                .collect::<Vec<String>>()
+                .concat();
+            println!(" done");
+
+            sala::gpg_encrypt(&key_ascii, &master_passphrase.as_bytes(), &key_path).unwrap();
             return AllesGut;
         }
 
@@ -140,6 +188,16 @@ fn exit_with_output(result: &SalaResult) -> ! {
     use SalaResult::*;
 
     process::exit(match result {
+        AlreadyInitialized => {
+            eprintln!("Error: The master key already exists");
+            1
+        }
+
+        CannotInitRepo => {
+            eprintln!("Error: Failed to initialize a new repository");
+            1
+        }
+
         FileDoesNotExist(path) => {
             eprintln!(
                 "Error: File does not exist or invalid: {}",
@@ -147,7 +205,7 @@ fn exit_with_output(result: &SalaResult) -> ! {
             );
             1
         }
-        InputsDontMatch => {
+        InputsDidntMatch => {
             eprintln!("");
             eprintln!("Inputs did not match.");
             1

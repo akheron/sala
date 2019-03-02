@@ -8,6 +8,7 @@ edition = "2018"
 atty = "0.2"
 clap = "2.32"
 nix = "0.13"
+rand = "0.6"
 rpassword = "2.1"
 
 [dev-dependencies]
