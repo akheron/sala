@@ -6,13 +6,15 @@ use nix::{
 use std::fs::{self, File};
 use std::io;
 use std::io::Write;
+use std::os::unix::io::FromRawFd;
+use std::os::unix::net::UnixStream;
 use std::path::Path;
 use std::process::{Command, Stdio};
 
 #[derive(Debug)]
 pub enum GpgError {
     IOError(io::Error),
-    OperationFailed,
+    OperationFailed(String),
 }
 
 fn nix_err(err: nix::Error) -> GpgError {
@@ -21,6 +23,10 @@ fn nix_err(err: nix::Error) -> GpgError {
     } else {
         panic!("unexpected nix error type: {:?}", err)
     }
+}
+
+fn gpg_err(msg: &[u8]) -> GpgError {
+    GpgError::OperationFailed(String::from_utf8_lossy(msg).to_string())
 }
 
 pub fn gpg_decrypt(path: &Path, key: &[u8]) -> Result<Vec<u8>, GpgError> {
@@ -42,14 +48,16 @@ pub fn gpg_decrypt(path: &Path, key: &[u8]) -> Result<Vec<u8>, GpgError> {
         .map_err(GpgError::IOError)?;
 
     unistd::close(passphrase_read_fd).map_err(nix_err)?;
-    unistd::write(passphrase_write_fd, key).map_err(nix_err)?;
-    unistd::close(passphrase_write_fd).map_err(nix_err)?;
+    unsafe {
+        let mut stream = UnixStream::from_raw_fd(passphrase_write_fd);
+        stream.write_all(key).map_err(GpgError::IOError)?;
+    }
 
     let output = gpg.wait_with_output().map_err(GpgError::IOError)?;
     if output.status.success() {
         Ok(output.stdout)
     } else {
-        Err(GpgError::OperationFailed)
+        Err(gpg_err(&output.stderr))
     }
 }
 
@@ -88,13 +96,14 @@ fn gpg_encrypt_impl<T: Into<Stdio>>(data: &str, key: &[u8], outfile: T) -> Resul
         .map_err(GpgError::IOError)?;
 
     unistd::close(passphrase_read_fd).map_err(nix_err)?;
-    unistd::write(passphrase_write_fd, key).map_err(nix_err)?;
-    unistd::close(passphrase_write_fd).map_err(nix_err)?;
-
+    unsafe {
+        let mut stream = UnixStream::from_raw_fd(passphrase_write_fd);
+        stream.write_all(key).map_err(GpgError::IOError)?;
+    }
     {
         gpg.stdin
             .as_mut()
-            .ok_or(GpgError::OperationFailed)?
+            .unwrap()
             .write_all(data.as_bytes())
             .map_err(GpgError::IOError)?;
     }
@@ -103,6 +112,6 @@ fn gpg_encrypt_impl<T: Into<Stdio>>(data: &str, key: &[u8], outfile: T) -> Resul
     if output.status.success() {
         Ok(())
     } else {
-        Err(GpgError::OperationFailed)
+        Err(gpg_err(&output.stderr))
     }
 }
