@@ -95,12 +95,14 @@ fn main() {
                         .help("Path of the file to write"),
                 ),
         )
+        .arg(Arg::with_name("path").hidden(true))
         .get_matches();
 
-    let result = match app_m.subcommand() {
-        ("init", Some(_)) => command_init(),
-        ("get", Some(sub_m)) => command_get(sub_m.value_of_os("path").unwrap()),
-        ("set", Some(sub_m)) => command_set(sub_m.value_of_os("path").unwrap()),
+    let result = match (app_m.subcommand(), app_m.value_of_os("path")) {
+        (("init", Some(_)), _) => command_init(),
+        (("get", Some(sub_m)), _) => command_get(sub_m.value_of_os("path").unwrap()),
+        (("set", Some(sub_m)), _) => command_set(sub_m.value_of_os("path").unwrap()),
+        (_, Some(path)) => command_get_or_set(path),
         _ => Err(Usage),
     };
 
@@ -172,6 +174,15 @@ fn command_set(path_arg: &OsStr) -> Result<Output, Error> {
 
     sala::gpg_encrypt(&new_secret, &master_key, &path).unwrap();
     Ok(NoOutput)
+}
+
+fn command_get_or_set(path_arg: &OsStr) -> Result<Output, Error> {
+    let path = Path::new(path_arg).to_path_buf();
+    if path.exists() {
+        command_get(path_arg)
+    } else {
+        command_set(path_arg)
+    }
 }
 
 fn print_output(output: &Output) {

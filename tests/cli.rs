@@ -316,3 +316,46 @@ fn test_set_replace_existing_success() -> Result<(), Box<Error>> {
     assert_eq!(secret_path.metadata()?.len() > 0, true);
     Ok(())
 }
+
+#[test]
+fn test_implicit_get() -> Result<(), Box<Error>> {
+    let repo = TempRepo::new()?;
+    Command::cargo_bin("sala")?
+        .current_dir(repo.path())
+        .arg(EXISTING_SECRET)
+        .with_stdin()
+        .buffer("qwerty\n")
+        .output()?
+        .assert()
+        .success()
+        .stderr(similar("Enter the master passphrase: "))
+        .stdout(similar(
+            "
+foo/@bar: baz
+
+",
+        ));
+
+    Ok(())
+}
+
+#[test]
+fn test_implicit_set() -> Result<(), Box<Error>> {
+    let repo = TempRepo::new()?;
+    Command::cargo_bin("sala")?
+        .current_dir(repo.path())
+        .arg(NON_EXISTING_SECRET)
+        .with_stdin()
+        .buffer("qwerty\nfoo\nfoo\n")
+        .output()?
+        .assert()
+        .success()
+        .stderr(similar(
+            "Enter the master passphrase: Type a new secret for foo/@new: Confirm: ",
+        ));
+
+    let secret_path = repo.path().join(NON_EXISTING_SECRET);
+    assert_eq!(secret_path.is_file(), true);
+    assert_eq!(secret_path.metadata()?.len() > 0, true);
+    Ok(())
+}
