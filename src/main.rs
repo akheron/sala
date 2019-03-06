@@ -8,7 +8,7 @@ use std::path::{Path, PathBuf};
 use std::str;
 
 enum Output {
-    Get(PathBuf, Vec<u8>),
+    Get(PathBuf, Vec<u8>, bool),
     NoOutput,
 }
 enum Error {
@@ -70,6 +70,13 @@ fn main() {
     let app_m = App::new("sala")
         .version("1.4")
         .about("Store passwords and other sensitive information to plain text files")
+        .arg(
+            Arg::with_name("raw")
+                .short("r")
+                .long("raw")
+                .global(true)
+                .help("Use a simple output format for machine processing"),
+        )
         .subcommand(
             SubCommand::with_name("init")
                 .display_order(0)
@@ -98,11 +105,12 @@ fn main() {
         .arg(Arg::with_name("path").hidden(true))
         .get_matches();
 
+    let raw = app_m.is_present("raw");
     let result = match (app_m.subcommand(), app_m.value_of_os("path")) {
         (("init", Some(_)), _) => command_init(),
-        (("get", Some(sub_m)), _) => command_get(sub_m.value_of_os("path").unwrap()),
+        (("get", Some(sub_m)), _) => command_get(sub_m.value_of_os("path").unwrap(), raw),
         (("set", Some(sub_m)), _) => command_set(sub_m.value_of_os("path").unwrap()),
-        (_, Some(path)) => command_get_or_set(path),
+        (_, Some(path)) => command_get_or_set(path, raw),
         _ => Err(Usage),
     };
 
@@ -149,7 +157,7 @@ fn command_init() -> Result<Output, Error> {
     Ok(NoOutput)
 }
 
-fn command_get(path_arg: &OsStr) -> Result<Output, Error> {
+fn command_get(path_arg: &OsStr, raw: bool) -> Result<Output, Error> {
     let path = Path::new(path_arg).to_path_buf();
 
     if !path.is_file() {
@@ -157,7 +165,7 @@ fn command_get(path_arg: &OsStr) -> Result<Output, Error> {
     }
     let master_key = unlock_repo()?;
     let secret = sala::gpg_decrypt(&path, &master_key).unwrap();
-    Ok(Get(path, secret))
+    Ok(Get(path, secret, raw))
 }
 
 fn command_set(path_arg: &OsStr) -> Result<Output, Error> {
@@ -176,10 +184,10 @@ fn command_set(path_arg: &OsStr) -> Result<Output, Error> {
     Ok(NoOutput)
 }
 
-fn command_get_or_set(path_arg: &OsStr) -> Result<Output, Error> {
+fn command_get_or_set(path_arg: &OsStr, raw: bool) -> Result<Output, Error> {
     let path = Path::new(path_arg).to_path_buf();
     if path.exists() {
-        command_get(path_arg)
+        command_get(path_arg, raw)
     } else {
         command_set(path_arg)
     }
@@ -187,14 +195,15 @@ fn command_get_or_set(path_arg: &OsStr) -> Result<Output, Error> {
 
 fn print_output(output: &Output) {
     match output {
-        Get(path, secret) => {
-            println!("");
-            println!(
-                "{}: {}",
-                path.to_string_lossy(),
-                String::from_utf8_lossy(&secret)
-            );
-            println!("");
+        Get(path, secret, raw) => {
+            let secret_utf8 = String::from_utf8_lossy(&secret);
+            if *raw {
+                println!("{}", secret_utf8);
+            } else {
+                println!("");
+                println!("{}: {}", path.to_string_lossy(), secret_utf8,);
+                println!("");
+            }
         }
         NoOutput => {}
     }

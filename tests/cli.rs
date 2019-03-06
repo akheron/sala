@@ -202,6 +202,23 @@ foo/@bar: baz
 }
 
 #[test]
+fn test_get_raw() -> Result<(), Box<Error>> {
+    let repo = TempRepo::new()?;
+    Command::cargo_bin("sala")?
+        .current_dir(repo.path())
+        .args(&["-r", "get", EXISTING_SECRET])
+        .with_stdin()
+        .buffer("qwerty\n")
+        .output()?
+        .assert()
+        .success()
+        .stderr(similar("Enter the master passphrase: "))
+        .stdout(similar("baz\n"));
+
+    Ok(())
+}
+
+#[test]
 fn test_set_no_repo() -> Result<(), Box<Error>> {
     let dir = tempdir()?;
 
