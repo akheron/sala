@@ -18,6 +18,7 @@ enum Error {
     InputsDidntMatch,
     NoRepo,
     TargetIsDirectory(PathBuf),
+    CannotCreateDirectory(PathBuf),
     UnlockFailed,
     Usage,
 }
@@ -170,6 +171,9 @@ fn command_get(path_arg: &OsStr, raw: bool) -> Result<Output, Error> {
 
 fn command_set(path_arg: &OsStr) -> Result<Output, Error> {
     let path = Path::new(path_arg).to_path_buf();
+    if let Some(parent) = path.parent() {
+        fs::create_dir_all(parent).map_err(|_| CannotCreateDirectory(parent.to_path_buf()))?
+    }
 
     if path.is_dir() {
         return Err(TargetIsDirectory(path));
@@ -241,6 +245,9 @@ fn print_error(error: &Error) {
         }
         TargetIsDirectory(path) => {
             eprintln!("Error: Target is a directory: {}", path.to_string_lossy());
+        }
+        CannotCreateDirectory(path) => {
+            eprintln!("Error: Cannot create directory: {}", path.to_string_lossy());
         }
     }
 }

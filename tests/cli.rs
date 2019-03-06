@@ -28,6 +28,8 @@ impl TempRepo {
 const DIRECTORY: &str = "foo";
 const EXISTING_SECRET: &str = "foo/@bar";
 const NON_EXISTING_SECRET: &str = "foo/@new";
+const INVALID_SECRET_PATH_DEEP: &str = "foo/@bar/@baz";
+const NON_EXISTING_SECRET_DEEP: &str = "foo/bar/baz/@new";
 
 #[test]
 fn test_no_args() -> Result<(), Box<Error>> {
@@ -308,6 +310,43 @@ fn test_set_new_success() -> Result<(), Box<Error>> {
         ));
 
     let secret_path = repo.path().join(NON_EXISTING_SECRET);
+    assert_eq!(secret_path.is_file(), true);
+    assert_eq!(secret_path.metadata()?.len() > 0, true);
+    Ok(())
+}
+
+#[test]
+fn test_set_new_cannot_create_parent_dirs() -> Result<(), Box<Error>> {
+    let repo = TempRepo::new()?;
+    Command::cargo_bin("sala")?
+        .current_dir(repo.path())
+        .args(&["set", INVALID_SECRET_PATH_DEEP])
+        .with_stdin()
+        .buffer("qwerty\nfoo\nfoo\n")
+        .output()?
+        .assert()
+        .failure()
+        .stderr(similar("Error: Cannot create directory: foo/@bar\n"));
+
+    Ok(())
+}
+
+#[test]
+fn test_set_new_creates_parent_dirs() -> Result<(), Box<Error>> {
+    let repo = TempRepo::new()?;
+    Command::cargo_bin("sala")?
+        .current_dir(repo.path())
+        .args(&["set", NON_EXISTING_SECRET_DEEP])
+        .with_stdin()
+        .buffer("qwerty\nfoo\nfoo\n")
+        .output()?
+        .assert()
+        .success()
+        .stderr(similar(
+            "Enter the master passphrase: Type a new secret for foo/bar/baz/@new: Confirm: ",
+        ));
+
+    let secret_path = repo.path().join(NON_EXISTING_SECRET_DEEP);
     assert_eq!(secret_path.is_file(), true);
     assert_eq!(secret_path.metadata()?.len() > 0, true);
     Ok(())
