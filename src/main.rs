@@ -1,73 +1,11 @@
 use clap::{App, Arg, SubCommand};
-use rand::{rngs::OsRng, RngCore};
-use rpassword;
-use sala;
+use sala::{
+    Error::{self, *},
+    Output::{self, *},
+};
 use std::env;
-use std::ffi::OsStr;
-use std::fs;
+use std::ffi::OsString;
 use std::path::{Path, PathBuf};
-use std::str;
-
-enum Output {
-    Get(PathBuf, Vec<u8>, bool),
-    NoOutput,
-}
-enum Error {
-    AlreadyInitialized,
-    CannotChangeToDir(PathBuf),
-    CannotInitRepo,
-    FileDoesNotExist(PathBuf),
-    InputsDidntMatch,
-    NoRepo,
-    TargetIsDirectory(PathBuf),
-    CannotCreateDirectory(PathBuf),
-    UnlockFailed,
-    Usage,
-}
-use Error::*;
-use Output::*;
-
-const INIT_MESSAGE: &str = "\
-Please pick a master passphrase. It is used to encrypt a very long
-random key, which in turn is used to encrypt all the private data in
-this directory.
-
-Make sure you remember the master passphrase and that it's strong
-enough for your privacy needs.
-";
-
-fn read_password(prompt: &str) -> String {
-    let result = if atty::is(atty::Stream::Stdin) {
-        rpassword::read_password_from_tty(Some(prompt))
-    } else {
-        rpassword::prompt_password_stderr(prompt)
-    };
-    match result {
-        Ok(password) => password,
-
-        // TODO: Error reading password, handle it somehow?
-        Err(_) => String::from(""),
-    }
-}
-
-fn read_secret(prompt1: &str, prompt2: &str) -> Result<String, Error> {
-    let input1 = read_password(prompt1);
-    let input2 = read_password(prompt2);
-    if input1 == input2 {
-        Ok(input1)
-    } else {
-        Err(InputsDidntMatch)
-    }
-}
-
-fn unlock_repo() -> Result<Vec<u8>, Error> {
-    if !Path::new(".sala/key").is_file() {
-        Err(NoRepo)
-    } else {
-        let passphrase = read_password("Enter the master passphrase: ");
-        sala::gpg_decrypt(Path::new(".sala/key"), &passphrase.as_bytes()).map_err(|_| UnlockFailed)
-    }
-}
 
 fn main() {
     let app_m = App::new("sala")
@@ -117,25 +55,33 @@ fn main() {
         .arg(Arg::with_name("path").hidden(true))
         .get_matches();
 
-    if let Some(cwd) = app_m
-        .value_of_os("directory")
-        .as_ref()
-        .map(|x| x.to_os_string())
-        .or_else(|| env::var_os("SALADIR"))
-    {
-        if let Err(_) = env::set_current_dir(&cwd) {
-            print_error(&CannotChangeToDir(PathBuf::from(&cwd)));
-            std::process::exit(1);
-        }
+    let repo_path = PathBuf::from(
+        app_m
+            .value_of_os("directory")
+            .as_ref()
+            .map(|x| x.to_os_string())
+            .or_else(|| env::var_os("SALADIR"))
+            .unwrap_or(OsString::from(".")),
+    );
+
+    if let Err(_) = env::set_current_dir(&repo_path) {
+        print_error(&sala::Error::CannotChangeToDir(PathBuf::from(&repo_path)));
+        std::process::exit(1);
     }
 
     let raw = app_m.is_present("raw");
     let result = match (app_m.subcommand(), app_m.value_of_os("path")) {
-        (("init", Some(_)), _) => command_init(),
-        (("get", Some(sub_m)), _) => command_get(sub_m.value_of_os("path").unwrap(), raw),
-        (("set", Some(sub_m)), _) => command_set(sub_m.value_of_os("path").unwrap()),
-        (_, Some(path)) => command_get_or_set(path, raw),
-        _ => Err(Usage),
+        (("init", Some(_)), _) => sala::init(&repo_path),
+        (("get", Some(sub_m)), _) => sala::get(
+            &repo_path,
+            Path::new(sub_m.value_of_os("path").unwrap()),
+            raw,
+        ),
+        (("set", Some(sub_m)), _) => {
+            sala::set(&repo_path, Path::new(sub_m.value_of_os("path").unwrap()))
+        }
+        (_, Some(path)) => sala::get_or_set(&repo_path, Path::new(path), raw),
+        _ => Err(sala::Error::Usage),
     };
 
     match result {
@@ -147,77 +93,6 @@ fn main() {
             std::process::exit(1);
         }
     };
-}
-
-fn command_init() -> Result<Output, Error> {
-    let key_path = Path::new(".sala/key");
-    if key_path.exists() {
-        return Err(AlreadyInitialized);
-    }
-
-    let sala_path = Path::new(".sala");
-    if !sala_path.exists() {
-        fs::create_dir(&sala_path).map_err(|_| CannotInitRepo)?
-    } else {
-        return Err(AlreadyInitialized);
-    }
-    println!("{}", INIT_MESSAGE);
-
-    let master_passphrase = read_secret("Enter a master passphrase: ", "Confirm: ")?;
-
-    println!("");
-    print!("Generating a master key (512 bits)...");
-    let mut rng = OsRng::new().unwrap();
-    let mut key: [u8; 32] = [0; 32];
-    rng.fill_bytes(&mut key);
-    let key_ascii: String = key
-        .iter()
-        .map(|&b| format!("{:x}", b))
-        .collect::<Vec<String>>()
-        .concat();
-    println!(" done");
-
-    sala::gpg_encrypt(&key_ascii, &master_passphrase.as_bytes(), &key_path).unwrap();
-    Ok(NoOutput)
-}
-
-fn command_get(path_arg: &OsStr, raw: bool) -> Result<Output, Error> {
-    let path = Path::new(path_arg).to_path_buf();
-
-    if !path.is_file() {
-        return Err(FileDoesNotExist(path));
-    }
-    let master_key = unlock_repo()?;
-    let secret = sala::gpg_decrypt(&path, &master_key).unwrap();
-    Ok(Get(path, secret, raw))
-}
-
-fn command_set(path_arg: &OsStr) -> Result<Output, Error> {
-    let path = Path::new(path_arg).to_path_buf();
-    if let Some(parent) = path.parent() {
-        fs::create_dir_all(parent).map_err(|_| CannotCreateDirectory(parent.to_path_buf()))?
-    }
-
-    if path.is_dir() {
-        return Err(TargetIsDirectory(path));
-    }
-    let master_key = unlock_repo()?;
-    let new_secret = read_secret(
-        &format!("Type a new secret for {}: ", path.to_string_lossy()),
-        "Confirm: ",
-    )?;
-
-    sala::gpg_encrypt(&new_secret, &master_key, &path).unwrap();
-    Ok(NoOutput)
-}
-
-fn command_get_or_set(path_arg: &OsStr, raw: bool) -> Result<Output, Error> {
-    let path = Path::new(path_arg).to_path_buf();
-    if path.exists() {
-        command_get(path_arg, raw)
-    } else {
-        command_set(path_arg)
-    }
 }
 
 fn print_output(output: &Output) {
