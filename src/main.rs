@@ -2,6 +2,7 @@ use clap::{App, Arg, SubCommand};
 use rand::{rngs::OsRng, RngCore};
 use rpassword;
 use sala;
+use std::env;
 use std::ffi::OsStr;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -13,6 +14,7 @@ enum Output {
 }
 enum Error {
     AlreadyInitialized,
+    CannotChangeToDir(PathBuf),
     CannotInitRepo,
     FileDoesNotExist(PathBuf),
     InputsDidntMatch,
@@ -78,6 +80,15 @@ fn main() {
                 .global(true)
                 .help("Use a simple output format for machine processing"),
         )
+        .arg(
+            Arg::with_name("directory")
+                .short("C")
+                .long("directory")
+                .takes_value(true)
+                .value_name("DIR")
+                .global(true)
+                .help("Use the password repository in DIR instead of current directory"),
+        )
         .subcommand(
             SubCommand::with_name("init")
                 .display_order(0)
@@ -105,6 +116,18 @@ fn main() {
         )
         .arg(Arg::with_name("path").hidden(true))
         .get_matches();
+
+    if let Some(cwd) = app_m
+        .value_of_os("directory")
+        .as_ref()
+        .map(|x| x.to_os_string())
+        .or_else(|| env::var_os("SALADIR"))
+    {
+        if let Err(_) = env::set_current_dir(&cwd) {
+            print_error(&CannotChangeToDir(PathBuf::from(&cwd)));
+            std::process::exit(1);
+        }
+    }
 
     let raw = app_m.is_present("raw");
     let result = match (app_m.subcommand(), app_m.value_of_os("path")) {
@@ -218,14 +241,18 @@ fn print_error(error: &Error) {
         AlreadyInitialized => {
             eprintln!("Error: The master key already exists");
         }
-
         CannotInitRepo => {
             eprintln!("Error: Failed to initialize a new repository");
         }
-
         FileDoesNotExist(path) => {
             eprintln!(
                 "Error: File does not exist or invalid: {}",
+                path.to_string_lossy()
+            );
+        }
+        CannotChangeToDir(path) => {
+            eprintln!(
+                "Error: Cannot change to directory: {}",
                 path.to_string_lossy()
             );
         }

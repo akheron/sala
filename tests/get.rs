@@ -1,5 +1,5 @@
 use assert_cmd::prelude::*;
-use predicates::str::similar;
+use predicates::str::{contains, similar};
 use std::error::Error;
 use std::fs;
 use std::process::Command;
@@ -129,6 +129,64 @@ fn implicit_get() -> Result<(), Box<Error>> {
     Command::cargo_bin("sala")?
         .current_dir(repo.path())
         .arg(EXISTING_SECRET)
+        .with_stdin()
+        .buffer("qwerty\n")
+        .output()?
+        .assert()
+        .success()
+        .stderr(similar("Enter the master passphrase: "))
+        .stdout(similar(
+            "
+foo/@bar: baz
+
+",
+        ));
+
+    Ok(())
+}
+
+#[test]
+fn get_in_dir_does_not_exist() -> Result<(), Box<Error>> {
+    let dir = tempdir()?.path().join("foo");
+    Command::cargo_bin("sala")?
+        .args(&["-C", &dir.to_string_lossy(), "get", EXISTING_SECRET])
+        .with_stdin()
+        .buffer("qwerty\n")
+        .output()?
+        .assert()
+        .failure()
+        .stderr(contains("Error: Cannot change to directory: "));
+
+    Ok(())
+}
+
+#[test]
+fn get_in_dir_success() -> Result<(), Box<Error>> {
+    let repo = TempRepo::new()?;
+    Command::cargo_bin("sala")?
+        .args(&["-C", &repo.path_string(), "get", EXISTING_SECRET])
+        .with_stdin()
+        .buffer("qwerty\n")
+        .output()?
+        .assert()
+        .success()
+        .stderr(similar("Enter the master passphrase: "))
+        .stdout(similar(
+            "
+foo/@bar: baz
+
+",
+        ));
+
+    Ok(())
+}
+
+#[test]
+fn get_saladir_env() -> Result<(), Box<Error>> {
+    let repo = TempRepo::new()?;
+    Command::cargo_bin("sala")?
+        .env("SALADIR", repo.path_string())
+        .args(&["get", EXISTING_SECRET])
         .with_stdin()
         .buffer("qwerty\n")
         .output()?

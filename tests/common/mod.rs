@@ -17,4 +17,8 @@ impl TempRepo {
     pub fn path(&self) -> PathBuf {
         self.dir.path().join("repo")
     }
+
+    pub fn path_string(&self) -> String {
+        self.path().to_string_lossy().to_string()
+    }
 }
