@@ -7,9 +7,12 @@ edition = "2018"
 [dependencies]
 atty = "0.2"
 clap = "2.32"
+dirs = "1.0"
 nix = "0.13"
 rand = "0.6"
 rpassword = "2.1"
+serde = { version = "1.0", features = ["derive"] }
+toml = "0.4.10"
 
 [dev-dependencies]
 assert_cmd = "0.11"

@@ -1,3 +1,4 @@
+pub mod config;
 mod gpg;
 
 use rand::{rngs::OsRng, RngCore};
