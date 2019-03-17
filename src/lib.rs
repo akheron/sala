@@ -89,9 +89,13 @@ pub fn init(repo_path: &Path, config: &Config) -> Result<Output, Error> {
     let master_passphrase = read_secret("Enter a master passphrase: ", "Confirm: ")?;
 
     println!("");
-    print!("Generating a master key (512 bits)...");
+    print!(
+        "Generating a master key ({} bits)...",
+        config.key_length * 8
+    );
     let mut rng = OsRng::new().unwrap();
-    let mut key: [u8; 32] = [0; 32];
+    let mut key: Vec<u8> = Vec::new();
+    key.resize(config.key_length, 0);
     rng.fill_bytes(&mut key);
     let key_ascii: String = key
         .iter()
