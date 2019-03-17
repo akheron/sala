@@ -61,12 +61,12 @@ pub fn decrypt(path: &Path, key: &[u8]) -> Result<Vec<u8>, GpgError> {
     }
 }
 
-pub fn encrypt(data: &str, key: &[u8], target: &Path) -> Result<(), GpgError> {
+pub fn encrypt(data: &str, key: &[u8], target: &Path, cipher: &str) -> Result<(), GpgError> {
     let mut target_tmp = target.as_os_str().to_os_string();
     target_tmp.push(".tmp");
 
     let target_file = File::create(&target_tmp).map_err(GpgError::IOError)?;
-    match gpg_encrypt_impl(data, key, target_file) {
+    match gpg_encrypt_impl(data, key, target_file, cipher) {
         Ok(_) => {
             fs::rename(&target_tmp, target).map_err(GpgError::IOError)?;
             Ok(())
@@ -78,7 +78,12 @@ pub fn encrypt(data: &str, key: &[u8], target: &Path) -> Result<(), GpgError> {
     }
 }
 
-fn gpg_encrypt_impl<T: Into<Stdio>>(data: &str, key: &[u8], outfile: T) -> Result<(), GpgError> {
+fn gpg_encrypt_impl<T: Into<Stdio>>(
+    data: &str,
+    key: &[u8],
+    outfile: T,
+    cipher: &str,
+) -> Result<(), GpgError> {
     let (passphrase_read_fd, passphrase_write_fd) = unistd::pipe().map_err(nix_err)?;
     fcntl::fcntl(passphrase_write_fd, FcntlArg::F_SETFD(FdFlag::FD_CLOEXEC)).map_err(nix_err)?;
 
@@ -87,6 +92,8 @@ fn gpg_encrypt_impl<T: Into<Stdio>>(data: &str, key: &[u8], outfile: T) -> Resul
         .arg("--no-tty")
         .arg("--armor")
         .arg("--symmetric")
+        .arg("--cipher-algo")
+        .arg(cipher)
         .arg("--passphrase-fd")
         .arg(passphrase_read_fd.to_string())
         .stdin(Stdio::piped())

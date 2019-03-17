@@ -1,5 +1,6 @@
 use clap::{App, Arg, SubCommand};
 use sala::{
+    config,
     Error::{self, *},
     Output::{self, *},
 };
@@ -64,6 +65,8 @@ fn main() {
             .unwrap_or(OsString::from(".")),
     );
 
+    let config = config::load(&repo_path);
+
     if let Err(_) = env::set_current_dir(&repo_path) {
         print_error(&sala::Error::CannotChangeToDir(PathBuf::from(&repo_path)));
         std::process::exit(1);
@@ -71,16 +74,18 @@ fn main() {
 
     let raw = app_m.is_present("raw");
     let result = match (app_m.subcommand(), app_m.value_of_os("path")) {
-        (("init", Some(_)), _) => sala::init(&repo_path),
+        (("init", Some(_)), _) => sala::init(&repo_path, &config),
         (("get", Some(sub_m)), _) => sala::get(
             &repo_path,
             Path::new(sub_m.value_of_os("path").unwrap()),
             raw,
         ),
-        (("set", Some(sub_m)), _) => {
-            sala::set(&repo_path, Path::new(sub_m.value_of_os("path").unwrap()))
-        }
-        (_, Some(path)) => sala::get_or_set(&repo_path, Path::new(path), raw),
+        (("set", Some(sub_m)), _) => sala::set(
+            &repo_path,
+            Path::new(sub_m.value_of_os("path").unwrap()),
+            &config,
+        ),
+        (_, Some(path)) => sala::get_or_set(&repo_path, Path::new(path), &config, raw),
         _ => Err(sala::Error::Usage),
     };
 

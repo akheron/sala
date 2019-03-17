@@ -7,6 +7,8 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::str;
 
+use self::config::Config;
+
 pub enum Output {
     Get(PathBuf, Vec<u8>, bool),
     NoOutput,
@@ -70,7 +72,7 @@ fn unlock_repo() -> Result<Vec<u8>, Error> {
     }
 }
 
-pub fn init(repo_path: &Path) -> Result<Output, Error> {
+pub fn init(repo_path: &Path, config: &Config) -> Result<Output, Error> {
     let key_path = repo_path.join(".sala/key");
     if key_path.exists() {
         return Err(AlreadyInitialized);
@@ -98,7 +100,13 @@ pub fn init(repo_path: &Path) -> Result<Output, Error> {
         .concat();
     println!(" done");
 
-    gpg::encrypt(&key_ascii, &master_passphrase.as_bytes(), &key_path).unwrap();
+    gpg::encrypt(
+        &key_ascii,
+        &master_passphrase.as_bytes(),
+        &key_path,
+        &config.cipher,
+    )
+    .unwrap();
     Ok(NoOutput)
 }
 
@@ -113,7 +121,7 @@ pub fn get(repo_path: &Path, path: &Path, raw: bool) -> Result<Output, Error> {
     Ok(Get(path.to_path_buf(), secret, raw))
 }
 
-pub fn set(repo_path: &Path, path: &Path) -> Result<Output, Error> {
+pub fn set(repo_path: &Path, path: &Path, config: &Config) -> Result<Output, Error> {
     let full_path = repo_path.join(path);
     if let Some(path_parent) = path.parent() {
         fs::create_dir_all(full_path.parent().unwrap())
@@ -129,14 +137,19 @@ pub fn set(repo_path: &Path, path: &Path) -> Result<Output, Error> {
         "Confirm: ",
     )?;
 
-    gpg::encrypt(&new_secret, &master_key, &full_path).unwrap();
+    gpg::encrypt(&new_secret, &master_key, &full_path, &config.cipher).unwrap();
     Ok(NoOutput)
 }
 
-pub fn get_or_set(repo_path: &Path, path: &Path, raw: bool) -> Result<Output, Error> {
+pub fn get_or_set(
+    repo_path: &Path,
+    path: &Path,
+    config: &Config,
+    raw: bool,
+) -> Result<Output, Error> {
     if repo_path.join(path).exists() {
         get(repo_path, path, raw)
     } else {
-        set(repo_path, path)
+        set(repo_path, path, config)
     }
 }
