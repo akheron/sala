@@ -21,9 +21,9 @@ impl Config {
 
 pub fn default_config() -> Config {
     Config {
-        cipher: "AES-128".to_string(),
+        cipher: "AES-128".into(),
         key_length: 64,
-        password_generator: "pwgen -nc 12 10".to_string(),
+        password_generator: "pwgen -nc 12 10".into(),
     }
 }
 
