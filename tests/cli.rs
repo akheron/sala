@@ -38,6 +38,7 @@ where
     let empty_dir = tempdir()?;
     let repo = TempRepo::new()?;
     let mut cmd = Command::cargo_bin("sala")?;
+    cmd.env("HOME", empty_dir.path());
     test_fn(&mut cmd, &empty_dir.path(), &repo)
 }
 
