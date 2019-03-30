@@ -1,7 +1,13 @@
 use dirs;
 use serde::Deserialize;
 use std::fs;
-use std::path::Path;
+use std::path::{Path, PathBuf};
+
+#[derive(Debug)]
+pub struct Error {
+    pub path: PathBuf,
+    pub error: toml::de::Error,
+}
 
 pub struct Config {
     pub cipher: String,
@@ -28,6 +34,7 @@ pub fn default_config() -> Config {
 }
 
 #[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
 #[serde(rename_all = "kebab-case")]
 struct ConfigFromFile {
     pub cipher: Option<String>,
@@ -41,24 +48,29 @@ const EMPTY_CONFIG: ConfigFromFile = ConfigFromFile {
     password_generator: None,
 };
 
-fn from_file(path: &Path) -> ConfigFromFile {
+fn from_file(path: &Path) -> Result<ConfigFromFile, Error> {
     match fs::read(path) {
-        Ok(contents) => toml::from_slice(&contents).unwrap_or(EMPTY_CONFIG),
-        Err(_) => EMPTY_CONFIG,
+        Ok(contents) => toml::from_slice(&contents).map_err(|e| Error {
+            path: path.to_path_buf(),
+            error: e,
+        }),
+        Err(_) => Ok(EMPTY_CONFIG),
     }
 }
 
-pub fn load(repo_path: &Path) -> Config {
+pub fn load(repo_path: &Path) -> Result<Config, Error> {
     let home_config = dirs::home_dir()
         .map(|h| from_file(&h.join(".sala.toml")))
-        .unwrap_or(EMPTY_CONFIG);
+        .unwrap_or(Ok(EMPTY_CONFIG))?;
     let xdg_config = dirs::config_dir()
         .map(|h| from_file(&h.join("sala.toml")))
-        .unwrap_or(EMPTY_CONFIG);
-    let repo_config = from_file(&repo_path.join(".sala/config"));
+        .unwrap_or(Ok(EMPTY_CONFIG))?;
+    let repo_config = from_file(&repo_path.join(".sala/config"))?;
 
-    default_config()
+    let result = default_config()
         .merge(home_config)
         .merge(xdg_config)
-        .merge(repo_config)
+        .merge(repo_config);
+
+    Ok(result)
 }

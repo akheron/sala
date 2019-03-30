@@ -65,7 +65,14 @@ fn main() {
             .unwrap_or(OsString::from(".")),
     );
 
-    let config = config::load(&repo_path);
+    let config = match config::load(&repo_path) {
+        Ok(config) => config,
+        Err(err) => {
+            eprintln!("Error loading config file {}:", err.path.to_string_lossy());
+            eprintln!("{}", err.error);
+            std::process::exit(1);
+        }
+    };
 
     if let Err(_) = env::set_current_dir(&repo_path) {
         print_error(&sala::Error::CannotChangeToDir(PathBuf::from(&repo_path)));
