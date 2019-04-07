@@ -16,7 +16,6 @@ pub enum Output {
 
 pub enum Error {
     AlreadyInitialized,
-    CannotChangeToDir(PathBuf),
     CannotInitRepo,
     FileDoesNotExist(PathBuf),
     InputsDidntMatch,
@@ -63,12 +62,13 @@ fn read_secret(prompt1: &str, prompt2: &str) -> Result<String, Error> {
     }
 }
 
-fn unlock_repo() -> Result<Vec<u8>, Error> {
-    if !Path::new(".sala/key").is_file() {
+fn unlock_repo(repo_path: &Path) -> Result<Vec<u8>, Error> {
+    let key_path = repo_path.join(".sala/key");
+    if !key_path.is_file() {
         Err(NoRepo)
     } else {
         let passphrase = read_password("Enter the master passphrase: ");
-        gpg::decrypt(Path::new(".sala/key"), &passphrase.as_bytes()).map_err(|_| UnlockFailed)
+        gpg::decrypt(&key_path, &passphrase.as_bytes()).map_err(|_| UnlockFailed)
     }
 }
 
@@ -120,7 +120,7 @@ pub fn get(repo_path: &Path, path: &Path, raw: bool) -> Result<Output, Error> {
     if !full_path.is_file() {
         return Err(FileDoesNotExist(path.to_path_buf()));
     }
-    let master_key = unlock_repo()?;
+    let master_key = unlock_repo(repo_path)?;
     let secret = gpg::decrypt(&full_path, &master_key).unwrap();
     Ok(Get(path.to_path_buf(), secret, raw))
 }
@@ -135,7 +135,7 @@ pub fn set(repo_path: &Path, path: &Path, config: &Config) -> Result<Output, Err
     if full_path.is_dir() {
         return Err(TargetIsDirectory(path.to_path_buf()));
     }
-    let master_key = unlock_repo()?;
+    let master_key = unlock_repo(repo_path)?;
     let new_secret = read_secret(
         &format!("Type a new secret for {}: ", path.to_string_lossy()),
         "Confirm: ",

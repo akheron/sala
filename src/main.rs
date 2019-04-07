@@ -74,11 +74,6 @@ fn main() {
         }
     };
 
-    if let Err(_) = env::set_current_dir(&repo_path) {
-        print_error(&sala::Error::CannotChangeToDir(PathBuf::from(&repo_path)));
-        std::process::exit(1);
-    }
-
     let raw = app_m.is_present("raw");
     let result = match (app_m.subcommand(), app_m.value_of_os("path")) {
         (("init", Some(_)), _) => sala::init(&repo_path, &config),
@@ -137,18 +132,12 @@ fn print_error(error: &Error) {
                 path.to_string_lossy()
             );
         }
-        CannotChangeToDir(path) => {
-            eprintln!(
-                "Error: Cannot change to directory: {}",
-                path.to_string_lossy()
-            );
-        }
         InputsDidntMatch => {
             eprintln!("");
             eprintln!("Inputs did not match.");
         }
         NoRepo => {
-            eprintln!("Run `sala init' first");
+            eprintln!("No repository. Run `sala init' first",);
         }
         UnlockFailed => {
             eprintln!("");

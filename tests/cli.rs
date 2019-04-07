@@ -1,7 +1,7 @@
 use assert_cmd::prelude::*;
 use copy_dir::copy_dir;
 use predicates::prelude::*;
-use predicates::str::{contains, similar};
+use predicates::str::similar;
 use std::error::Error;
 use std::fs;
 use std::io;
@@ -59,7 +59,7 @@ fn get_no_repo() -> Result<(), Box<Error>> {
             .args(&["get", "foo"])
             .assert()
             .failure()
-            .stderr(similar("Run `sala init' first\n"));
+            .stderr(similar("No repository. Run `sala init' first\n"));
 
         Ok(())
     })
@@ -193,7 +193,12 @@ fn get_in_dir_does_not_exist() -> Result<(), Box<Error>> {
             .output()?
             .assert()
             .failure()
-            .stderr(contains("Error: Cannot change to directory: "));
+            .stderr(similar(format!(
+                "\
+Error: File does not exist or invalid: {}
+",
+                EXISTING_SECRET
+            )));
 
         Ok(())
     })
@@ -251,7 +256,7 @@ fn set_no_repo() -> Result<(), Box<Error>> {
             .args(&["set", "foobar"])
             .assert()
             .failure()
-            .stderr(similar("Run `sala init' first").trim());
+            .stderr(similar("No repository. Run `sala init' first").trim());
 
         Ok(())
     })
