@@ -100,7 +100,11 @@ fn unlock_repo(repo_path: &Path) -> Result<Vec<u8>, Error> {
 }
 
 fn generate_suggestions(config: &Config) -> Option<Vec<String>> {
-    if let Ok(parsed_cmd) = shell_words::split(&config.password_generator) {
+    if let Some(parsed_cmd) = config
+        .password_generator
+        .to_owned()
+        .and_then(|cmd| shell_words::split(&cmd).ok())
+    {
         Command::new(&parsed_cmd[0])
             .args(&parsed_cmd[1..])
             .output()

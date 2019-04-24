@@ -12,7 +12,7 @@ pub struct Error {
 pub struct Config {
     pub cipher: String,
     pub key_length: usize,
-    pub password_generator: String,
+    pub password_generator: Option<String>,
 }
 
 impl Config {
@@ -20,7 +20,7 @@ impl Config {
         Config {
             cipher: other.cipher.unwrap_or(self.cipher),
             key_length: other.key_length.unwrap_or(self.key_length),
-            password_generator: other.password_generator.unwrap_or(self.password_generator),
+            password_generator: other.password_generator.or(self.password_generator),
         }
     }
 }
@@ -29,7 +29,7 @@ pub fn default_config() -> Config {
     Config {
         cipher: "AES-128".into(),
         key_length: 64,
-        password_generator: "pwgen -nc 12 10".into(),
+        password_generator: None,
     }
 }
 
