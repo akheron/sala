@@ -1,10 +1,12 @@
 pub mod config;
 mod gpg;
 
+extern crate shell_words;
 use rand::{rngs::OsRng, RngCore};
 use rpassword;
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::process::Command;
 use std::str;
 
 use self::config::Config;
@@ -62,6 +64,31 @@ fn read_secret(prompt1: &str, prompt2: &str) -> Result<String, Error> {
     }
 }
 
+fn read_secret_or_choice(
+    prompt1: &str,
+    prompt2: &str,
+    choices: &Vec<String>,
+) -> Result<String, Error> {
+    println!("");
+    for (i, choice) in choices.iter().enumerate() {
+        println!("{}. {}", i, choice);
+    }
+    println!("");
+
+    let input1 = read_password(prompt1);
+    match input1.parse::<usize>() {
+        Ok(index) if index < choices.len() => Ok(choices.get(index).unwrap().to_owned()),
+        _ => {
+            let input2 = read_password(prompt2);
+            if input1 == input2 {
+                Ok(input1)
+            } else {
+                Err(InputsDidntMatch)
+            }
+        }
+    }
+}
+
 fn unlock_repo(repo_path: &Path) -> Result<Vec<u8>, Error> {
     let key_path = repo_path.join(".sala/key");
     if !key_path.is_file() {
@@ -69,6 +96,26 @@ fn unlock_repo(repo_path: &Path) -> Result<Vec<u8>, Error> {
     } else {
         let passphrase = read_password("Enter the master passphrase: ");
         gpg::decrypt(&key_path, &passphrase.as_bytes()).map_err(|_| UnlockFailed)
+    }
+}
+
+fn generate_suggestions(config: &Config) -> Option<Vec<String>> {
+    if let Ok(parsed_cmd) = shell_words::split(&config.password_generator) {
+        Command::new(&parsed_cmd[0])
+            .args(&parsed_cmd[1..])
+            .output()
+            .ok()
+            .and_then(|output| String::from_utf8(output.stdout).ok())
+            .and_then(|s| {
+                let result: Vec<String> = s.split_whitespace().map(|t| t.into()).collect();
+                if result.len() == 0 {
+                    None
+                } else {
+                    Some(result)
+                }
+            })
+    } else {
+        None
     }
 }
 
@@ -136,11 +183,22 @@ pub fn set(repo_path: &Path, path: &Path, config: &Config) -> Result<Output, Err
         return Err(TargetIsDirectory(path.to_path_buf()));
     }
     let master_key = unlock_repo(repo_path)?;
-    let new_secret = read_secret(
-        &format!("Type a new secret for {}: ", path.to_string_lossy()),
-        "Confirm: ",
-    )?;
 
+    let new_secret = if let Some(suggestions) = generate_suggestions(config) {
+        read_secret_or_choice(
+            &format!(
+                "Select a number from the list or type a new secret for {}: ",
+                path.to_string_lossy()
+            ),
+            "Confirm: ",
+            &suggestions,
+        )
+    } else {
+        read_secret(
+            &format!("Type a new secret for {}: ", path.to_string_lossy()),
+            "Confirm: ",
+        )
+    }?;
     gpg::encrypt(&new_secret, &master_key, &full_path, &config.cipher).unwrap();
     Ok(NoOutput)
 }
