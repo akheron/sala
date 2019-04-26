@@ -88,7 +88,7 @@ fn main() {
             &config,
         ),
         (_, Some(path)) => sala::get_or_set(&repo_path, Path::new(path), &config, raw),
-        _ => Err(sala::Error::Usage),
+        _ => Err(Error::Usage),
     };
 
     match result {
