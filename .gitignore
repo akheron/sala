@@ -1,10 +1,2 @@
-/MANIFEST
-/dist
-/build
-*.pyc
-*.pyo
-.noseids
-.coverage
-
 /target
 **/*.rs.bk
