@@ -5,6 +5,7 @@ use predicates::str::similar;
 use std::error::Error;
 use std::fs;
 use std::io;
+use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use tempfile::{tempdir, TempDir};
@@ -392,6 +393,37 @@ fn set_replace_existing_success() -> Result<(), Box<Error>> {
             .success()
             .stderr(similar(
                 "Enter the master passphrase: Type a new secret for foo/@bar: Confirm: ",
+            ));
+
+        let secret_path = repo.path().join(EXISTING_SECRET);
+        assert_eq!(secret_path.is_file(), true);
+        assert_eq!(secret_path.metadata()?.len() > 0, true);
+        Ok(())
+    })
+}
+
+#[test]
+fn set_suggestions() -> Result<(), Box<Error>> {
+    run_test(|cmd, home, repo| {
+        write!(
+            fs::File::create(home.join(".sala.toml"))?,
+            "password-generator = \"sh -c 'echo foo; echo bar; echo baz'\"",
+        )?;
+        cmd.current_dir(repo.path())
+            .args(&["set", NON_EXISTING_SECRET])
+            .with_stdin()
+            .buffer("qwerty\nquux\nquux\n")
+            .output()?
+            .assert()
+            .success()
+            .stdout(similar("
+0. foo
+1. bar
+2. baz
+
+"))
+            .stderr(similar(
+                "Enter the master passphrase: Select a number from the list or type a new secret for foo/@new: Confirm: ",
             ));
 
         let secret_path = repo.path().join(EXISTING_SECRET);
