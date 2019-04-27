@@ -16,6 +16,8 @@ Released on 2019-04-27
 
     - Drop support for hooks
 
+    - Drop support for getting or setting multiple secrets at once
+
 
 Version 1.3
 -----------

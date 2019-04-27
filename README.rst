@@ -16,14 +16,14 @@ Commands:
 ``sala init``
     Initialize a password store
 
-``sala get FILE...``
-    Read secret(s)
+``sala get FILE``
+    Read a secret
 
-``sala set FILE...``
-    Create or modify secret(s)
+``sala set FILE``
+    Create or modify a secret
 
-``sala FILE...``
-    Read or modify, depending on whether the first file exists or not
+``sala FILE``
+    Read or modify, depending on whether the file exists or not
 
 Options:
 
@@ -87,26 +87,19 @@ secret.
 All the files are just normal files, so you can safely remove or
 rename files if you want to.
 
-The above commands can also be used on multiple files at once::
-
-    $ sala set service2/@myuser service3/@otheruser
-    $ sala get service2/@myuser service3/@otheruser
-
-If no command is specified, sala assumes ``get`` if the first file
-exists and ``set`` otherwise. That is, the command::
+If no command is specified, sala assumes ``get`` if the file exists
+and ``set`` otherwise. That is, the command::
 
     $ sala foo/@bar
 
 reads the secret ``foo/@bar`` if the file exists, and creates a new
-secret otherwise. Note that this may not work as you expect for
-multiple files, as the existence of the first file determines whether
-to read or to write.
+secret otherwise.
 
 
 Configuration
 =============
 
-Sala can be configured with an TOML configuration file. Sala tries to
+Sala can be configured with a TOML configuration file. Sala tries to
 read its configuration files in this order:
 
 * ``~/.sala.toml``
@@ -129,9 +122,6 @@ Here's the default configuration::
     # Master key length, in bytes
     key-length = 64
 
-    # A command for generating password suggestions (not set by default)
-    #password-generator = pwgen -nc 12 10
-
 Changing ``cipher`` only affects secrets that are set after the
 configuration setting is changed. Old secrets will not automatically
 be re-encrypted.
@@ -140,12 +130,16 @@ Only ``sala init`` uses the ``key-length`` option. If you want the
 master key to be of a different size, make sure the configuration file
 exists before you run ``sala init``.
 
-The ``password-generator`` command is run through to generate password
+The ``password-generator`` command is run to generate password
 suggestions. If the command fails (is not found or exits with non-zero
 exit status), its output is ignored. Othewise, the output should
 consist of one or more words separated by whitespace (space, tab,
 newline, etc.). These words are presented to the user as password
-suggestions by ``sala set``.
+suggestions by ``sala set``. For example, the following line in the
+config will use ``pwgen`` to generate a list of 10 password
+suggestions, 16 charaters each::
+
+    password-generator = "pwgen -nc 16 10"
 
 
 Bash completion
@@ -184,17 +178,16 @@ the store are encrypted with the master key.
 Building and developing
 =======================
 
-Sala is written in Rust, so you'll need to have a Rust installation in
-order to compile it.
+Sala is written in Rust, so you'll need to have Rust installed.
 
-The following builds sala::
+Run the following commands to build sala::
 
     $ git clone https://github.com/akheron/sala
     $ cd sala
     $ cargo build --release
 
-The resulting binary is in ``./target/release/sala``.
+The result is a single binary ``./target/release/sala``.
 
-Run the tests::
+Run the test suite::
 
     $ cargo test --all
