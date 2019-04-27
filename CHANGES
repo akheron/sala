@@ -1,6 +1,22 @@
 Release history
 ===============
 
+Version 2.0
+-----------
+
+Released on 2019-04-27
+
+* Port to Rust
+
+* Breaking changes:
+
+    - Configuration format is now TOML instead of INI
+
+    - Password generator has no default value anymore
+
+    - Drop support for hooks
+
+
 Version 1.3
 -----------
 
