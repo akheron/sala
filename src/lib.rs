@@ -1,5 +1,6 @@
 pub mod config;
 mod gpg;
+mod hooks;
 
 extern crate shell_words;
 use rand::{rngs::OsRng, RngCore};
@@ -10,9 +11,11 @@ use std::process::Command;
 use std::str;
 
 use self::config::Config;
+use self::hooks::{run_hook, Hook};
 
 pub enum Output {
-    Get(PathBuf, Vec<u8>, bool),
+    Get(PathBuf, Vec<u8>, bool, Vec<String>),
+    Put(Vec<String>),
     NoOutput,
 }
 
@@ -173,7 +176,12 @@ pub fn get(repo_path: &Path, path: &Path, raw: bool) -> Result<Output, Error> {
     }
     let master_key = unlock_repo(repo_path)?;
     let secret = gpg::decrypt(&full_path, &master_key).unwrap();
-    Ok(Get(path.to_path_buf(), secret, raw))
+
+    let hook_warnings = match str::from_utf8(&secret) {
+        Ok(s) => run_hook(repo_path, path, Hook::PostGet(s.to_string())),
+        Err(_) => vec!["Cannot run hooks: secret is not valid UTF-8".to_string()],
+    };
+    Ok(Get(path.to_path_buf(), secret, raw, hook_warnings))
 }
 
 pub fn set(repo_path: &Path, path: &Path, config: &Config) -> Result<Output, Error> {
@@ -204,7 +212,9 @@ pub fn set(repo_path: &Path, path: &Path, config: &Config) -> Result<Output, Err
         )
     }?;
     gpg::encrypt(&new_secret, &master_key, &full_path, &config.cipher).unwrap();
-    Ok(NoOutput)
+
+    let hook_warnings = run_hook(&repo_path, path, Hook::PostSet);
+    Ok(Put(hook_warnings))
 }
 
 pub fn get_or_set(

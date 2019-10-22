@@ -102,17 +102,31 @@ fn main() {
     };
 }
 
+fn maybe_print_hook_warnings(hook_warnings: &Vec<String>) {
+    if hook_warnings.len() > 0 {
+        println!("");
+        println!("Hooks produced warnings:");
+        for warning in hook_warnings.iter() {
+            println!("{}", warning);
+        }
+    }
+}
+
 fn print_output(output: &Output) {
     match output {
-        Get(path, secret, raw) => {
+        Get(path, secret, raw, hook_warnings) => {
             let secret_utf8 = String::from_utf8_lossy(&secret);
             if *raw {
                 println!("{}", secret_utf8);
             } else {
                 println!("");
                 println!("{}: {}", path.to_string_lossy(), secret_utf8,);
+                maybe_print_hook_warnings(&hook_warnings);
                 println!("");
             }
+        }
+        Put(hook_warnings) => {
+            maybe_print_hook_warnings(&hook_warnings);
         }
         NoOutput => {}
     }

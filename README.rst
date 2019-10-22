@@ -142,6 +142,42 @@ suggestions, 16 charaters each::
     password-generator = "pwgen -nc 16 10"
 
 
+Hooks
+=====
+
+Sala supports running user-defined programs, called hooks, upon
+certain activities. Hooks are run from the following paths, and all
+hooks that are found for a certain activity are run:
+
+* ``.sala/HOOK`` in the top directory of the password store
+
+* ``~/.config/sala/HOOK`` (more specifically
+  ``$XDG_CONFIG_HOME/sala/HOOK``)
+
+Here, ``HOOK`` is the name of the hook (see below for all defined
+hooks). Non-executable hooks are ignored.
+
+Before sala runs a hook, it changes its working directory to the root
+directory of the password store. Hooks get their input as command-line
+parameters. Hooks inherit the stdout/stderr file descriptors of sala,
+so anything they output will be visible in the terminal.
+
+The following hooks are defined.
+
+* `post-get`: Run after reading a secret.
+
+  Gets two parameters:
+
+  1. The relative path of the secret
+  2. The decrypted secret
+
+* `post-set`: Run after creating or modifying a secret.
+
+  Gets one parameter:
+
+  1. The relative path of the secret.
+
+
 Bash completion
 ===============
 
